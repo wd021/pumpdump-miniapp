@@ -2,21 +2,83 @@ import React, { useState, useEffect } from "react";
 import {
   TrendingUp,
   TrendingDown,
-  Trophy,
   Clock,
-  ChevronUp,
-  ChevronDown,
   History,
   X,
   Plus,
   Info,
   Crown,
-  Target,
   AlertCircle,
   ExternalLink,
 } from "lucide-react";
+import { supabase } from "@/utils/supabaseClient";
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+interface PredictionPeriod {
+  id: number;
+  asset_id: number;
+  starts_at: string;
+  ends_at: string;
+  is_active: boolean;
+  buy_in: number;
+  total_pool: number;
+  current_price: number;
+  current_high: number;
+  current_low: number;
+  final_high: number;
+  final_low: number;
+  closed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+const usePredictionPeriod = () => {
+  const [period, setPeriod] = useState<PredictionPeriod | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCurrentPeriod = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("t_prediction_periods")
+        .select("*")
+        .eq("is_active", true)
+        .lte("starts_at", new Date().toISOString())
+        .gte("ends_at", new Date().toISOString())
+        .single();
+
+      if (error) throw error;
+      setPeriod(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCurrentPeriod(); // Initial fetch
+
+    // Set up polling interval
+    const intervalId = setInterval(fetchCurrentPeriod, 15000); // 15 seconds
+
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return { period, loading, error };
+};
+
+const Modal = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}) => {
   if (!isOpen) return null;
 
   return (
@@ -38,7 +100,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   );
 };
 
-export default function EnhancedCryptoPredictionGame() {
+export default function PumpDumpHome() {
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
@@ -49,6 +111,7 @@ export default function EnhancedCryptoPredictionGame() {
     seconds: 0,
   });
   const [yourPrediction, setYourPrediction] = useState(null);
+  const { period, loading, error } = usePredictionPeriod();
 
   useEffect(() => {
     const calculateTimeRemaining = () => {
@@ -70,10 +133,10 @@ export default function EnhancedCryptoPredictionGame() {
   }, []);
 
   const stats = {
-    currentPrice: 44321.55,
+    currentPrice: period?.current_price ?? 0,
     todayRange: {
-      high: 45100,
-      low: 43800,
+      high: period?.current_high ?? 0,
+      low: period?.current_low ?? 0,
     },
     currentLeader: {
       wallet: "0x1234...5678",
@@ -115,74 +178,59 @@ export default function EnhancedCryptoPredictionGame() {
   return (
     <div className="min-h-screen bg-gray-950">
       <div className="max-w-3xl mx-auto p-4 space-y-6">
-        {/* Header - Simplified */}
+        {/* Header - Update prize pool */}
         <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white mb-1">
-                BTC Price Prediction
-              </h1>
-              <p className="text-gray-400">Predict tomorrow's high & low</p>
-            </div>
-            <div className="text-right">
-              <div className="text-white font-bold text-xl">
-                {stats.prizePool} TON
-              </div>
-              <div className="text-gray-400 text-sm">Today's Prize Pool</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 bg-gray-950/50 rounded-lg p-2 w-fit">
-            <Clock className="w-4 h-4 text-blue-400" />
-            <div className="font-mono text-white">
-              {`${String(countdown.hours).padStart(2, "0")}:${String(
-                countdown.minutes
-              ).padStart(2, "0")}:${String(countdown.seconds).padStart(
-                2,
-                "0"
-              )}`}
-            </div>
-            <div className="text-gray-400 text-sm ml-2">
-              until tomorrow's round
+          <div className="flex flex-col items-center justify-between text-center">
+            <div className="text-gray-400 text-sm">Today's Prize Pool</div>
+            <div className="text-white font-bold text-3xl mt-2">
+              {period ? `${period.total_pool} TON` : "Loading..."}
             </div>
           </div>
         </div>
 
-        {/* Main Game Panel - Enhanced Focus on Price Range */}
+        {/* Main Game Panel - Add loading state */}
         <div className="space-y-6">
-          {/* Current Price - Large and Prominent (unchanged) */}
-          <div className="bg-gray-900 rounded-2xl p-8 text-center">
-            <div className="text-gray-400 mb-3">Current BTC Price</div>
-            <div className="text-5xl font-bold text-white mb-4">
-              ${stats.currentPrice.toLocaleString()}
-            </div>
+          <div className="bg-gray-900 rounded-2xl p-8 text-center border border-gray-800">
+            {loading ? (
+              <div className="text-gray-400">Loading price data...</div>
+            ) : error ? (
+              <div className="text-rose-500">Error: {error}</div>
+            ) : (
+              <>
+                <div className="text-gray-400 mb-3">Current BTC Price</div>
+                <div className="text-5xl font-bold text-white mb-4">
+                  ${Math.round(stats.currentPrice).toLocaleString()}
+                </div>
 
-            {/* Today's Range - Large (unchanged) */}
-            <div className="grid grid-cols-2 gap-8 mt-8">
-              <div>
-                <div className="flex items-center justify-center gap-2 text-emerald-500 mb-3">
-                  <TrendingUp className="w-6 h-6" />
-                  <div className="text-base font-medium">Today's High</div>
-                </div>
-                <div className="text-4xl font-bold text-white">
-                  ${stats.todayRange.high.toLocaleString()}
-                </div>
-              </div>
+                {/* Today's Range */}
+                <div className="grid grid-cols-2 gap-8 mt-8">
+                  <div>
+                    <div className="flex items-center justify-center gap-2 text-emerald-500 mb-3">
+                      <TrendingUp className="w-6 h-6" />
+                      <div className="text-base font-medium">Today's High</div>
+                    </div>
+                    <div className="text-4xl font-bold text-white">
+                      ${Math.round(stats.todayRange.high).toLocaleString()}
+                    </div>
+                  </div>
 
-              <div>
-                <div className="flex items-center justify-center gap-2 text-rose-500 mb-3">
-                  <TrendingDown className="w-6 h-6" />
-                  <div className="text-base font-medium">Today's Low</div>
+                  <div>
+                    <div className="flex items-center justify-center gap-2 text-rose-500 mb-3">
+                      <TrendingDown className="w-6 h-6" />
+                      <div className="text-base font-medium">Today's Low</div>
+                    </div>
+                    <div className="text-4xl font-bold text-white">
+                      ${Math.round(stats.todayRange.low).toLocaleString()}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-4xl font-bold text-white">
-                  ${stats.todayRange.low.toLocaleString()}
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
 
           {/* Leader Section - Redesigned with Emphasis on Accuracy */}
           <div>
-            <div className="bg-gray-900 rounded-2xl p-4">
+            <div className="bg-gray-900 rounded-2xl p-4 border border-gray-800">
               <div className="text-sm text-gray-400 mb-2 ml-1">
                 Leading Prediction
               </div>
@@ -210,11 +258,15 @@ export default function EnhancedCryptoPredictionGame() {
                 <div className="flex items-center gap-4 text-gray-400 text-sm">
                   <div className="flex items-center gap-1">
                     <TrendingUp className="w-4 h-4 text-emerald-500/60" />$
-                    {stats.currentLeader.prediction.high.toLocaleString()}
+                    {Math.round(
+                      stats.currentLeader.prediction.high
+                    ).toLocaleString()}
                   </div>
                   <div className="flex items-center gap-1">
                     <TrendingDown className="w-4 h-4 text-rose-500/60" />$
-                    {stats.currentLeader.prediction.low.toLocaleString()}
+                    {Math.round(
+                      stats.currentLeader.prediction.low
+                    ).toLocaleString()}
                   </div>
                 </div>
               </div>
@@ -224,12 +276,26 @@ export default function EnhancedCryptoPredictionGame() {
 
         {/* Action Buttons - Cleaner Look */}
         <div className="grid grid-cols-1 gap-4">
+          <div className="flex items-center gap-2 bg-gray-950/50 rounded-lg p-2 mt-2">
+            <Clock className="w-4 h-4 text-blue-400" />
+            <div className="font-mono text-white">
+              {`${String(countdown.hours).padStart(2, "0")}:${String(
+                countdown.minutes
+              ).padStart(2, "0")}:${String(countdown.seconds).padStart(
+                2,
+                "0"
+              )}`}
+            </div>
+            <div className="text-gray-400 text-sm ml-2">
+              tomorrow's round starts
+            </div>
+          </div>
           <button
             onClick={() => setShowPredictionModal(true)}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all font-bold"
           >
             <Plus className="w-5 h-5" />
-            Predict For Tomorrow
+            Lock In Prediction
           </button>
 
           <div className="grid grid-cols-2 gap-4">
@@ -293,7 +359,7 @@ export default function EnhancedCryptoPredictionGame() {
             <div className="flex items-center gap-2 text-gray-400 mb-2">
               <Info className="w-4 h-4" />
               <span className="text-sm">
-                Current BTC: ${stats.currentPrice.toLocaleString()}
+                Current BTC: ${Math.round(stats.currentPrice).toLocaleString()}
               </span>
             </div>
           </div>
@@ -334,11 +400,11 @@ export default function EnhancedCryptoPredictionGame() {
                   <div className="text-white">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-emerald-500" />$
-                      {entry.prediction.high.toLocaleString()}
+                      {Math.round(entry.prediction.high).toLocaleString()}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <TrendingDown className="w-4 h-4 text-rose-500" />$
-                      {entry.prediction.low.toLocaleString()}
+                      {Math.round(entry.prediction.low).toLocaleString()}
                     </div>
                   </div>
                 </div>
@@ -348,11 +414,11 @@ export default function EnhancedCryptoPredictionGame() {
                   <div className="text-white">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-emerald-500" />$
-                      {entry.actual.high.toLocaleString()}
+                      {Math.round(entry.actual.high).toLocaleString()}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <TrendingDown className="w-4 h-4 text-rose-500" />$
-                      {entry.actual.low.toLocaleString()}
+                      {Math.round(entry.actual.low).toLocaleString()}
                     </div>
                   </div>
                 </div>
