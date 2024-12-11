@@ -2,8 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+html,
 body {
   background: var(--tg-theme-secondary-bg-color, white);
   padding: 0;
   margin: 0;
+  color: var(--tg-theme-text-color, black);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
