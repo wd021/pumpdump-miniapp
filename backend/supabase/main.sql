@@ -51,11 +51,6 @@ create table t_user_predictions (
     created_at timestamptz default now()
 );
 
--- Indexes for better query performance
-create index idx_prediction_periods_active_dates on t_prediction_periods(is_active, starts_at, ends_at);
-create index idx_user_predictions_period on t_user_predictions(period_id);
-create index idx_user_predictions_wallet on t_user_predictions(wallet_address);
-
 -- Functions for game management
 create or replace function submit_prediction(
     p_wallet_address text,
@@ -220,6 +215,168 @@ returns table (
     and pp.ends_at > now()
     group by pp.id, ca.symbol, ca.name, ca.logo_url;
 $$;
+
+-- Function to get current prediction accuracy rankings
+create or replace function get_current_prediction_rankings(p_period_id bigint)
+returns table (
+    wallet_address text,
+    predicted_high numeric(20,8),
+    predicted_low numeric(20,8),
+    current_high numeric(20,8),
+    current_low numeric(20,8),
+    high_accuracy_percentage numeric(20,2),
+    low_accuracy_percentage numeric(20,2),
+    combined_accuracy_percentage numeric(20,2),
+    rank bigint
+) language sql as $$
+    with prediction_accuracy as (
+        select 
+            up.wallet_address,
+            up.predicted_high,
+            up.predicted_low,
+            pp.current_high,
+            pp.current_low,
+            -- Calculate accuracy percentage for high prediction
+            (100 - abs(
+                ((up.predicted_high - pp.current_high) / pp.current_high) * 100
+            )) as high_accuracy_percentage,
+            -- Calculate accuracy percentage for low prediction
+            (100 - abs(
+                ((up.predicted_low - pp.current_low) / pp.current_low) * 100
+            )) as low_accuracy_percentage
+        from t_user_predictions up
+        join t_prediction_periods pp on up.period_id = pp.id
+        where up.period_id = p_period_id
+        and pp.current_high is not null
+        and pp.current_low is not null
+    )
+    select 
+        wallet_address,
+        predicted_high,
+        predicted_low,
+        current_high,
+        current_low,
+        round(high_accuracy_percentage::numeric, 2) as high_accuracy_percentage,
+        round(low_accuracy_percentage::numeric, 2) as low_accuracy_percentage,
+        round(((high_accuracy_percentage + low_accuracy_percentage) / 2)::numeric, 2) as combined_accuracy_percentage,
+        rank() over (
+            order by (high_accuracy_percentage + low_accuracy_percentage) / 2 desc
+        )
+    from prediction_accuracy
+    order by combined_accuracy_percentage desc;
+$$;
+
+create or replace function get_current_leaderboard(p_period_id bigint, p_limit integer default 10)
+returns table (
+    wallet_address text,
+    predicted_high numeric(20,8),
+    predicted_low numeric(20,8),
+    combined_accuracy_percentage numeric(20,2),
+    rank bigint
+) language sql as $$
+    select 
+        wallet_address,
+        predicted_high,
+        predicted_low,
+        combined_accuracy_percentage,
+        rank
+    from get_current_prediction_rankings(p_period_id)
+    limit p_limit;
+$$;
+
+create or replace function get_wallet_leaderboard_position(p_period_id bigint, p_wallet_address text)
+returns table (
+    wallet_address text,
+    predicted_high numeric(20,8),
+    predicted_low numeric(20,8),
+    combined_accuracy_percentage numeric(20,2),
+    rank bigint
+) language sql as $$
+    select 
+        wallet_address,
+        predicted_high,
+        predicted_low,
+        combined_accuracy_percentage,
+        rank
+    from get_current_prediction_rankings(p_period_id)
+    where wallet_address = p_wallet_address;
+$$;
+
+create or replace function get_user_prediction_history(
+    p_wallet_address text,
+    p_page_size integer default 10,
+    p_page_number integer default 1
+)
+returns table (
+    period_id bigint,
+    period_start_time timestamptz,
+    period_end_time timestamptz,
+    final_high numeric(20,8),
+    final_low numeric(20,8),
+    winner_wallet_address text,
+    winner_predicted_high numeric(20,8),
+    winner_predicted_low numeric(20,8),
+    winner_accuracy numeric(20,2),
+    user_predicted_high numeric(20,8),
+    user_predicted_low numeric(20,8),
+    user_accuracy numeric(20,2)
+) language sql as $$
+    with period_winners as (
+        select 
+            up.period_id,
+            up.wallet_address,
+            up.predicted_high,
+            up.predicted_low,
+            case 
+                when pp.final_high is not null and pp.final_low is not null then
+                    round((
+                        (100 - abs(((up.predicted_high - pp.final_high) / pp.final_high) * 100)) +
+                        (100 - abs(((up.predicted_low - pp.final_low) / pp.final_low) * 100))
+                    ) / 2, 2)
+                else null
+            end as accuracy
+        from t_user_predictions up
+        join t_prediction_periods pp on up.period_id = pp.id
+        where up.total_difference = (
+            select min(total_difference)
+            from t_user_predictions
+            where period_id = up.period_id
+            and total_difference is not null
+        )
+    )
+    select 
+        pp.id as period_id,
+        pp.starts_at as period_start_time,
+        pp.ends_at as period_end_time,
+        pp.final_high,
+        pp.final_low,
+        pw.wallet_address as winner_wallet_address,
+        pw.predicted_high as winner_predicted_high,
+        pw.predicted_low as winner_predicted_low,
+        pw.accuracy as winner_accuracy,
+        up.predicted_high as user_predicted_high,
+        up.predicted_low as user_predicted_low,
+        case 
+            when pp.final_high is not null and pp.final_low is not null then
+                round((
+                    (100 - abs(((up.predicted_high - pp.final_high) / pp.final_high) * 100)) +
+                    (100 - abs(((up.predicted_low - pp.final_low) / pp.final_low) * 100))
+                ) / 2, 2)
+            else null
+        end as user_accuracy
+    from t_prediction_periods pp
+    left join period_winners pw on pp.id = pw.period_id
+    left join t_user_predictions up on pp.id = up.period_id and up.wallet_address = p_wallet_address
+    order by pp.id desc
+    limit p_page_size
+    offset (p_page_number - 1) * p_page_size;
+$$;
+
+-- Indexes for better query performance
+create index if not exists idx_prediction_periods_active_dates on t_prediction_periods(is_active, starts_at, ends_at);
+create index if not exists idx_user_predictions_period on t_user_predictions(period_id);
+create index if not exists idx_user_predictions_wallet on t_user_predictions(wallet_address);
+create index if not exists idx_user_predictions_period_composite on t_user_predictions(period_id, wallet_address);
 
 -- Sample data insertion
 -- insert into t_crypto_assets (symbol, name, logo_url) values 

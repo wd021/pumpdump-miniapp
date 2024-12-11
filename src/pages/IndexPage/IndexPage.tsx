@@ -5,13 +5,19 @@ import {
   Clock,
   History,
   X,
-  Plus,
   Info,
   Crown,
   AlertCircle,
   ExternalLink,
+  User,
 } from "lucide-react";
 import { supabase } from "@/utils/supabaseClient";
+import {
+  TonConnectButton,
+  useTonConnectUI,
+  useTonWallet,
+  useTonAddress,
+} from "@tonconnect/ui-react";
 
 interface PredictionPeriod {
   id: number;
@@ -31,10 +37,42 @@ interface PredictionPeriod {
   updated_at: string;
 }
 
+interface UserPrediction {
+  wallet_address: string;
+  period_id: number;
+  predicted_high: number;
+  predicted_low: number;
+}
+
+interface LeaderboardEntry {
+  wallet_address: string;
+  predicted_high: number;
+  predicted_low: number;
+  combined_accuracy_percentage: number;
+  rank: number;
+}
+
+interface WalletLeaderboardPosition {
+  wallet_address: string;
+  predicted_high: number;
+  predicted_low: number;
+  combined_accuracy_percentage: number;
+  rank: number;
+}
+
 const usePredictionPeriod = () => {
   const [period, setPeriod] = useState<PredictionPeriod | null>(null);
+  const [userPrediction, setUserPrediction] = useState<UserPrediction | null>(
+    null
+  );
+  const [currentLeader, setCurrentLeader] = useState<LeaderboardEntry | null>(
+    null
+  );
+  const [walletPosition, setWalletPosition] =
+    useState<WalletLeaderboardPosition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const walletAddress = useTonAddress();
 
   const fetchCurrentPeriod = async () => {
     try {
@@ -55,17 +93,101 @@ const usePredictionPeriod = () => {
     }
   };
 
+  // Separate effect for fetching user prediction
   useEffect(() => {
-    fetchCurrentPeriod(); // Initial fetch
+    const fetchUserPrediction = async () => {
+      if (!walletAddress || !period?.id) {
+        setUserPrediction(null);
+        return;
+      }
 
-    // Set up polling interval
-    const intervalId = setInterval(fetchCurrentPeriod, 15000); // 15 seconds
+      try {
+        const { data, error } = await supabase
+          .from("t_user_predictions")
+          .select("*")
+          .eq("wallet_address", walletAddress)
+          .eq("period_id", period.id)
+          .single();
 
-    // Cleanup interval on unmount
+        if (error) throw error;
+        setUserPrediction(data);
+      } catch (err) {
+        console.error("Error fetching user prediction:", err);
+        setUserPrediction(null);
+      }
+    };
+
+    fetchUserPrediction();
+  }, [walletAddress, period?.id]);
+
+  // Original period polling effect
+  useEffect(() => {
+    fetchCurrentPeriod();
+    const intervalId = setInterval(fetchCurrentPeriod, 15000);
     return () => clearInterval(intervalId);
   }, []);
 
-  return { period, loading, error };
+  const fetchLeaderboard = async (periodId: number) => {
+    try {
+      const { data, error } = await supabase.rpc("get_current_leaderboard", {
+        p_period_id: periodId,
+        p_limit: 1,
+      });
+
+      if (error) throw error;
+      if (data && data.length > 0) {
+        setCurrentLeader(data[0]);
+      }
+    } catch (err) {
+      console.error("Error fetching leaderboard:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (period?.id) {
+      fetchLeaderboard(period.id);
+    }
+  }, [period?.id]);
+
+  useEffect(() => {
+    const fetchWalletPosition = async () => {
+      if (!walletAddress || !period?.id) {
+        setWalletPosition(null);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.rpc(
+          "get_wallet_leaderboard_position",
+          {
+            p_period_id: period.id,
+            p_wallet_address: walletAddress,
+          }
+        );
+
+        if (error) throw error;
+        if (data && data.length > 0) {
+          setWalletPosition(data[0]);
+        } else {
+          setWalletPosition(null);
+        }
+      } catch (err) {
+        console.error("Error fetching wallet position:", err);
+        setWalletPosition(null);
+      }
+    };
+
+    fetchWalletPosition();
+  }, [walletAddress, period?.id]);
+
+  return {
+    period,
+    loading,
+    error,
+    userPrediction,
+    currentLeader,
+    walletPosition,
+  };
 };
 
 const Modal = ({
@@ -101,6 +223,9 @@ const Modal = ({
 };
 
 export default function PumpDumpHome() {
+  const walletAddress = useTonAddress();
+  const [tonConnectUI, setOptions] = useTonConnectUI();
+
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
@@ -111,14 +236,34 @@ export default function PumpDumpHome() {
     seconds: 0,
   });
   const [yourPrediction, setYourPrediction] = useState(null);
-  const { period, loading, error } = usePredictionPeriod();
+  const {
+    period,
+    loading,
+    error,
+    userPrediction,
+    currentLeader,
+    walletPosition,
+  } = usePredictionPeriod();
+
+  const [submitStatus, setSubmitStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     const calculateTimeRemaining = () => {
+      if (!period?.ends_at) return;
+
       const now = new Date();
-      const endOfDay = new Date();
-      endOfDay.setUTCHours(24, 0, 0, 0);
-      const timeRemaining = endOfDay - now;
+      const endTime = new Date(period.ends_at);
+      const timeRemaining = endTime.getTime() - now.getTime();
+
+      // Return early if time has expired
+      if (timeRemaining < 0) {
+        setCountdown({ hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
       const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
       const minutes = Math.floor(
         (timeRemaining % (1000 * 60 * 60)) / (1000 * 60)
@@ -130,21 +275,13 @@ export default function PumpDumpHome() {
     calculateTimeRemaining();
     const timer = setInterval(calculateTimeRemaining, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [period?.ends_at]);
 
   const stats = {
     currentPrice: period?.current_price ?? 0,
     todayRange: {
       high: period?.current_high ?? 0,
       low: period?.current_low ?? 0,
-    },
-    currentLeader: {
-      wallet: "0x1234...5678",
-      accuracy: 98.5,
-      prediction: {
-        high: 45200,
-        low: 43700,
-      },
     },
   };
 
@@ -163,16 +300,110 @@ export default function PumpDumpHome() {
     },
   ];
 
-  const handleSubmitPrediction = (e) => {
+  const handleSubmitPrediction = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (prediction.high && prediction.low) {
+
+    try {
+      setSubmitStatus("loading");
+      setSubmitError(null);
+
+      if (!walletAddress) {
+        throw new Error("Please connect your wallet first");
+      }
+
+      if (!period?.id) {
+        throw new Error("No active prediction period found");
+      }
+
+      if (!prediction.high || !prediction.low) {
+        throw new Error("Please enter both high and low predictions");
+      }
+
+      // 1. Send TON transaction
+      // const transaction: SendTransactionRequest = {
+      //   validUntil: Date.now() + 5 * 60 * 1000,
+      //   messages: [
+      //     {
+      //       address: "UQAS5RgeZdShqIIjhTtbFiLPask0eHUmbsltA99oybs8KDvm",
+      //       amount: "1000000", // 0.001 TON
+      //     },
+      //   ],
+      // };
+
+      // const txResult = await tonConnectUI.sendTransaction(transaction);
+
+      // 2. Submit prediction to API
+      const response = await fetch(
+        "https://zyld7uqfrv5ruinxs7sdntcmsm0dbzez.lambda-url.us-east-1.on.aws/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            walletAddress: walletAddress,
+            periodId: period.id,
+            predictedHigh: parseFloat(prediction.high),
+            predictedLow: parseFloat(prediction.low),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to submit prediction");
+      }
+
+      // Success handling
       setYourPrediction({
         high: parseFloat(prediction.high),
         low: parseFloat(prediction.low),
       });
       setShowPredictionModal(false);
       setPrediction({ high: "", low: "" });
+      setSubmitStatus("success");
+    } catch (error) {
+      console.error("Prediction submission error:", error);
+      setSubmitStatus("error");
+      setSubmitError(
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      );
     }
+  };
+
+  const SubmitStatusModal = () => {
+    if (submitStatus === "idle") return null;
+
+    return (
+      <Modal
+        isOpen={
+          submitStatus === "loading" ||
+          submitStatus === "success" ||
+          submitStatus === "error"
+        }
+        onClose={() => setSubmitStatus("idle")}
+        title={
+          submitStatus === "loading"
+            ? "Submitting..."
+            : submitStatus === "success"
+            ? "Success!"
+            : "Error"
+        }
+      >
+        <div className="p-4 text-center">
+          {submitStatus === "loading" && (
+            <div className="text-gray-400">Processing your prediction...</div>
+          )}
+          {submitStatus === "success" && (
+            <div className="text-emerald-500">
+              Your prediction has been submitted successfully!
+            </div>
+          )}
+          {submitStatus === "error" && (
+            <div className="text-rose-500">{submitError}</div>
+          )}
+        </div>
+      </Modal>
+    );
   };
 
   return (
@@ -183,7 +414,7 @@ export default function PumpDumpHome() {
           <div className="flex flex-col items-center justify-between text-center">
             <div className="text-gray-400 text-sm">Today's Prize Pool</div>
             <div className="text-white font-bold text-3xl mt-2">
-              {period ? `${period.total_pool} TON` : "Loading..."}
+              💰 {period ? `${period.total_pool} TON` : "Loading..."}
             </div>
           </div>
         </div>
@@ -234,42 +465,95 @@ export default function PumpDumpHome() {
               <div className="text-sm text-gray-400 mb-2 ml-1">
                 Leading Prediction
               </div>
-              <div className="flex items-center justify-between">
-                {/* Leader Info */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-yellow-500/10 p-1.5 rounded-lg">
-                      <Crown className="w-4 h-4 text-yellow-500" />
+              {currentLeader ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-yellow-500/10 p-1.5 rounded-lg">
+                        <Crown className="w-4 h-4 text-yellow-500" />
+                      </div>
+                      <div className="text-2xl font-bold text-emerald-500">
+                        {currentLeader.combined_accuracy_percentage.toFixed(1)}%
+                      </div>
                     </div>
-                    <div className="text-2xl font-bold text-emerald-500">
-                      {stats.currentLeader.accuracy}%
+
+                    <div className="flex items-center gap-1 text-gray-400">
+                      <div className="font-mono text-sm">
+                        {currentLeader.wallet_address.slice(0, 4)}...
+                        {currentLeader.wallet_address.slice(-4)}
+                      </div>
+                      <ExternalLink className="w-3 h-3" />
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 text-gray-400">
-                    <div className="font-mono text-sm">
-                      {stats.currentLeader.wallet}
+                  <div className="flex items-center gap-4 text-gray-400 text-sm">
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="w-4 h-4 text-emerald-500/60" />$
+                      {Math.round(
+                        currentLeader.predicted_high
+                      ).toLocaleString()}
                     </div>
-                    <ExternalLink className="w-3 h-3" />
+                    <div className="flex items-center gap-1">
+                      <TrendingDown className="w-4 h-4 text-rose-500/60" />$
+                      {Math.round(currentLeader.predicted_low).toLocaleString()}
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <div className="text-gray-500 text-sm py-2">
+                  No predictions yet
+                </div>
+              )}
+            </div>
+          </div>
 
-                {/* Predictions */}
-                <div className="flex items-center gap-4 text-gray-400 text-sm">
-                  <div className="flex items-center gap-1">
-                    <TrendingUp className="w-4 h-4 text-emerald-500/60" />$
-                    {Math.round(
-                      stats.currentLeader.prediction.high
-                    ).toLocaleString()}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <TrendingDown className="w-4 h-4 text-rose-500/60" />$
-                    {Math.round(
-                      stats.currentLeader.prediction.low
-                    ).toLocaleString()}
-                  </div>
-                </div>
+          {/* Your Prediction Section */}
+          <div>
+            <div className="bg-gray-900 rounded-2xl p-4 border border-gray-800">
+              <div className="text-sm text-gray-400 mb-2 ml-1">
+                Your Prediction
               </div>
+              {walletPosition ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-blue-500/10 p-1.5 rounded-lg">
+                        <User className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <div className="text-2xl font-bold text-emerald-500">
+                        {walletPosition.combined_accuracy_percentage.toFixed(1)}
+                        %
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 text-gray-400">
+                      <div className="font-mono text-sm">
+                        {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
+                      </div>
+                      <ExternalLink className="w-3 h-3" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-gray-400 text-sm">
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="w-4 h-4 text-emerald-500/60" />$
+                      {Math.round(
+                        walletPosition.predicted_high
+                      ).toLocaleString()}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <TrendingDown className="w-4 h-4 text-rose-500/60" />$
+                      {Math.round(
+                        walletPosition.predicted_low
+                      ).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-gray-500 text-sm py-2">
+                  You haven't made a prediction for this round
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -290,13 +574,17 @@ export default function PumpDumpHome() {
               tomorrow's round starts
             </div>
           </div>
-          <button
-            onClick={() => setShowPredictionModal(true)}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all font-bold"
-          >
-            <Plus className="w-5 h-5" />
-            Lock In Prediction
-          </button>
+
+          {walletAddress ? (
+            <button
+              onClick={() => setShowPredictionModal(true)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all font-bold"
+            >
+              Predict Tomorrow's Price (1 TON)
+            </button>
+          ) : (
+            <TonConnectButton className="w-full" />
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <button
@@ -321,7 +609,7 @@ export default function PumpDumpHome() {
       <Modal
         isOpen={showPredictionModal}
         onClose={() => setShowPredictionModal(false)}
-        title="Tomorrow's BTC Range"
+        title="Tomorrow's BTC Price"
       >
         <form onSubmit={handleSubmitPrediction} className="space-y-6">
           <div className="space-y-4">
@@ -354,21 +642,11 @@ export default function PumpDumpHome() {
               />
             </div>
           </div>
-
-          <div className="bg-gray-900 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-gray-400 mb-2">
-              <Info className="w-4 h-4" />
-              <span className="text-sm">
-                Current BTC: ${Math.round(stats.currentPrice).toLocaleString()}
-              </span>
-            </div>
-          </div>
-
           <button
             type="submit"
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-semibold transition-all"
           >
-            Submit Prediction
+            Submit Prediction (1 TON)
           </button>
         </form>
       </Modal>
@@ -480,6 +758,8 @@ export default function PumpDumpHome() {
           </div>
         </div>
       </Modal>
+
+      <SubmitStatusModal />
     </div>
   );
 }

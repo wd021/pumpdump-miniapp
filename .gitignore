@@ -40,3 +40,4 @@ yarn-error.log*
 next-env.d.ts
 
 /backend/api/node_modules
+/backend/distribute/node_modules
