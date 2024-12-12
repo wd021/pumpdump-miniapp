@@ -7,14 +7,14 @@ import {
   X,
   Info,
   Crown,
-  AlertCircle,
+  // AlertCircle,
   ExternalLink,
   User,
 } from "lucide-react";
 import { supabase } from "@/utils/supabaseClient";
 import {
   TonConnectButton,
-  useTonConnectUI,
+  // useTonConnectUI,
   useTonAddress,
 } from "@tonconnect/ui-react";
 import { publicUrl } from "@/helpers/publicUrl.ts";
@@ -240,7 +240,7 @@ const Modal = ({
 
 export default function PumpDumpHome() {
   const walletAddress = useTonAddress();
-  const [tonConnectUI, setOptions] = useTonConnectUI();
+  // const [tonConnectUI, setOptions] = useTonConnectUI();
 
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -251,15 +251,9 @@ export default function PumpDumpHome() {
     minutes: 0,
     seconds: 0,
   });
-  const [yourPrediction, setYourPrediction] = useState(null);
-  const {
-    period,
-    loading,
-    error,
-    userPrediction,
-    currentLeader,
-    walletPosition,
-  } = usePredictionPeriod();
+  const [, setYourPrediction] = useState<any>(null);
+  const { period, loading, error, currentLeader, walletPosition } =
+    usePredictionPeriod();
 
   const [submitStatus, setSubmitStatus] = useState<
     "idle" | "loading" | "success" | "error"
@@ -455,7 +449,7 @@ export default function PumpDumpHome() {
           <div className="flex flex-col items-center justify-between text-center">
             <div className="text-gray-400 text-sm">Today's Prize Pool</div>
             <div className="text-white font-bold text-3xl mt-2">
-              {period ? `${period.total_pool} TON` : "Loading..."}
+              {period ? `${period?.total_pool} TON` : "Loading..."}
             </div>
           </div>
         </div>
@@ -514,14 +508,15 @@ export default function PumpDumpHome() {
                         <Crown className="w-4 h-4 text-yellow-500" />
                       </div>
                       <div className="text-2xl font-bold text-emerald-500">
-                        {currentLeader.combined_accuracy_percentage.toFixed(1)}%
+                        {currentLeader?.combined_accuracy_percentage.toFixed(1)}
+                        %
                       </div>
                     </div>
 
                     <div className="flex items-center gap-1 text-gray-400">
                       <div className="font-mono text-sm">
-                        {currentLeader.wallet_address.slice(0, 4)}...
-                        {currentLeader.wallet_address.slice(-4)}
+                        {currentLeader?.wallet_address.slice(0, 4)}...
+                        {currentLeader?.wallet_address.slice(-4)}
                       </div>
                       <ExternalLink className="w-3 h-3" />
                     </div>
@@ -531,12 +526,14 @@ export default function PumpDumpHome() {
                     <div className="flex items-center gap-1">
                       <TrendingUp className="w-4 h-4 text-emerald-500/60" />$
                       {Math.round(
-                        currentLeader.predicted_high
+                        currentLeader?.predicted_high!
                       ).toLocaleString()}
                     </div>
                     <div className="flex items-center gap-1">
                       <TrendingDown className="w-4 h-4 text-rose-500/60" />$
-                      {Math.round(currentLeader.predicted_low).toLocaleString()}
+                      {Math.round(
+                        currentLeader?.predicted_low!
+                      ).toLocaleString()}
                     </div>
                   </div>
                 </div>
@@ -562,7 +559,9 @@ export default function PumpDumpHome() {
                         <User className="w-4 h-4 text-blue-500" />
                       </div>
                       <div className="text-2xl font-bold text-emerald-500">
-                        {walletPosition.combined_accuracy_percentage.toFixed(1)}
+                        {walletPosition?.combined_accuracy_percentage.toFixed(
+                          1
+                        )}
                         %
                       </div>
                     </div>
@@ -579,13 +578,13 @@ export default function PumpDumpHome() {
                     <div className="flex items-center gap-1">
                       <TrendingUp className="w-4 h-4 text-emerald-500/60" />$
                       {Math.round(
-                        walletPosition.predicted_high
+                        walletPosition?.predicted_high!
                       ).toLocaleString()}
                     </div>
                     <div className="flex items-center gap-1">
                       <TrendingDown className="w-4 h-4 text-rose-500/60" />$
                       {Math.round(
-                        walletPosition.predicted_low
+                        walletPosition?.predicted_low!
                       ).toLocaleString()}
                     </div>
                   </div>

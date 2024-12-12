@@ -24,7 +24,7 @@ import "./TONConnectPage.css";
 
 export const TONConnectPage: FC = () => {
   const wallet = useTonWallet();
-  const [tonConnectUI, setOptions] = useTonConnectUI();
+  const [tonConnectUI] = useTonConnectUI();
 
   if (!wallet) {
     return (
@@ -120,10 +120,10 @@ export const TONConnectPage: FC = () => {
 
           console.log("txResult", txResult);
 
-          const cell = Cell.fromBase64(txResult.boc);
-          const buffer = cell.hash();
-          const hashHex = buffer.toString("hex");
-          console.log("Transaction Hash:", hashHex);
+          // const cell = Cell.fromBase64(txResult.boc);
+          // const buffer = cell.hash();
+          // const hashHex = buffer.toString("hex");
+          // console.log("Transaction Hash:", hashHex);
         }}
       >
         Send transaction
