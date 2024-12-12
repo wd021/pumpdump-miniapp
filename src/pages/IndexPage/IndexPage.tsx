@@ -17,6 +17,7 @@ import {
   useTonConnectUI,
   useTonAddress,
 } from "@tonconnect/ui-react";
+import { publicUrl } from "@/helpers/publicUrl.ts";
 
 interface PredictionPeriod {
   id: number;
@@ -439,6 +440,12 @@ export default function PumpDumpHome() {
       fetchPredictionHistory();
     }
   }, [showHistoryModal, walletAddress]);
+
+  return (
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <img src={publicUrl("/logo.png")} alt="Pumpdump Logo" className="w-1/2" />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-950">
