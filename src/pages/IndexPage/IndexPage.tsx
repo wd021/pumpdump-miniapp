@@ -15,7 +15,6 @@ import { supabase } from "@/utils/supabaseClient";
 import {
   TonConnectButton,
   useTonConnectUI,
-  useTonWallet,
   useTonAddress,
 } from "@tonconnect/ui-react";
 
@@ -58,6 +57,22 @@ interface WalletLeaderboardPosition {
   predicted_low: number;
   combined_accuracy_percentage: number;
   rank: number;
+}
+
+interface PredictionHistory {
+  period_id: number;
+  period_start_time: string;
+  period_end_time: string;
+  final_high: number;
+  final_low: number;
+  winner_wallet_address: string;
+  winner_predicted_high: number;
+  winner_predicted_low: number;
+  winner_accuracy: number;
+  user_predicted_high: number;
+  user_predicted_low: number;
+  user_accuracy: number;
+  total_pool: number;
 }
 
 const usePredictionPeriod = () => {
@@ -250,6 +265,11 @@ export default function PumpDumpHome() {
   >("idle");
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const [predictionHistory, setPredictionHistory] = useState<
+    PredictionHistory[]
+  >([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
   useEffect(() => {
     const calculateTimeRemaining = () => {
       if (!period?.ends_at) return;
@@ -284,21 +304,6 @@ export default function PumpDumpHome() {
       low: period?.current_low ?? 0,
     },
   };
-
-  const predictionHistory = [
-    {
-      date: "2024-12-10",
-      prediction: { high: 45000, low: 43500 },
-      actual: { high: 45100, low: 43800 },
-      accuracy: 97.8,
-    },
-    {
-      date: "2024-12-09",
-      prediction: { high: 44500, low: 43000 },
-      actual: { high: 44300, low: 42900 },
-      accuracy: 96.5,
-    },
-  ];
 
   const handleSubmitPrediction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -406,6 +411,35 @@ export default function PumpDumpHome() {
     );
   };
 
+  const fetchPredictionHistory = async () => {
+    if (!walletAddress) return;
+
+    setHistoryLoading(true);
+    try {
+      const { data, error } = await supabase.rpc(
+        "get_user_prediction_history",
+        {
+          p_wallet_address: walletAddress,
+          p_page_size: 10,
+          p_page_number: 1,
+        }
+      );
+
+      if (error) throw error;
+      setPredictionHistory(data || []);
+    } catch (err) {
+      console.error("Error fetching prediction history:", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showHistoryModal) {
+      fetchPredictionHistory();
+    }
+  }, [showHistoryModal, walletAddress]);
+
   return (
     <div className="min-h-screen bg-gray-950">
       <div className="max-w-3xl mx-auto p-4 space-y-6">
@@ -414,7 +448,7 @@ export default function PumpDumpHome() {
           <div className="flex flex-col items-center justify-between text-center">
             <div className="text-gray-400 text-sm">Today's Prize Pool</div>
             <div className="text-white font-bold text-3xl mt-2">
-              💰 {period ? `${period.total_pool} TON` : "Loading..."}
+              {period ? `${period.total_pool} TON` : "Loading..."}
             </div>
           </div>
         </div>
@@ -651,58 +685,113 @@ export default function PumpDumpHome() {
         </form>
       </Modal>
 
-      {/* History Modal - Simplified */}
+      {/* History Modal */}
       <Modal
         isOpen={showHistoryModal}
         onClose={() => setShowHistoryModal(false)}
-        title="Your Prediction History"
+        title="Past Predictions"
       >
-        <div className="space-y-4">
-          {predictionHistory.map((entry) => (
-            <div
-              key={entry.date}
-              className="border border-gray-800 rounded-lg p-4"
-            >
-              <div className="flex justify-between items-center mb-3">
-                <div className="text-gray-400">{entry.date}</div>
-                <div className="text-emerald-500 font-medium">
-                  {entry.accuracy}% accurate
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <div className="text-sm text-gray-400 mb-1">
-                    Your Prediction
-                  </div>
-                  <div className="text-white">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-emerald-500" />$
-                      {Math.round(entry.prediction.high).toLocaleString()}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <TrendingDown className="w-4 h-4 text-rose-500" />$
-                      {Math.round(entry.prediction.low).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm text-gray-400 mb-1">Actual Range</div>
-                  <div className="text-white">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-emerald-500" />$
-                      {Math.round(entry.actual.high).toLocaleString()}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <TrendingDown className="w-4 h-4 text-rose-500" />$
-                      {Math.round(entry.actual.low).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto hide-scrollbar">
+          {historyLoading ? (
+            <div className="text-gray-400 text-center py-4">
+              Loading history...
             </div>
-          ))}
+          ) : predictionHistory.length === 0 ? (
+            <div className="text-gray-400 text-center py-4">
+              No prediction history found
+            </div>
+          ) : (
+            predictionHistory.map((entry) => (
+              <div
+                key={entry.period_id}
+                className="border border-gray-800 rounded-lg p-4 space-y-4"
+              >
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400">
+                    {new Date(entry.period_start_time).toLocaleDateString()}
+                  </div>
+                  <div className="text-gray-400">💰 {entry.total_pool} TON</div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  {/* Final Results */}
+                  <div>
+                    <div className="text-sm text-gray-400 mb-2">Final</div>
+                    {entry.final_high ? (
+                      <div className="text-white">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-green-500" />$
+                          {Math.round(entry.final_high).toLocaleString()}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <TrendingDown className="w-4 h-4 text-rose-500" />$
+                          {Math.round(entry.final_low).toLocaleString()}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-gray-500 text-sm">Pending</div>
+                    )}
+                  </div>
+
+                  {/* Winner's Prediction */}
+                  <div>
+                    <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                      <span>Winner</span>
+                      {entry.winner_accuracy && (
+                        <div className="bg-green-500/10 px-2 py-0.5 rounded">
+                          <span className="text-green-500">
+                            {entry.winner_accuracy.toFixed(1)}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {entry.winner_wallet_address ? (
+                      <div className="text-white">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-green-500" />$
+                          {Math.round(
+                            entry.winner_predicted_high
+                          ).toLocaleString()}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <TrendingDown className="w-4 h-4 text-rose-500" />$
+                          {Math.round(
+                            entry.winner_predicted_low
+                          ).toLocaleString()}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-gray-500 text-sm">Pending</div>
+                    )}
+                  </div>
+
+                  {/* Your Prediction */}
+                  <div>
+                    <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                      <span>You</span>
+                      {entry.user_accuracy && (
+                        <div className="bg-green-500/10 px-2 py-0.5 rounded">
+                          <span className="text-green-500">
+                            {entry.user_accuracy.toFixed(1)}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-white">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-green-500" />$
+                        {Math.round(entry.user_predicted_high).toLocaleString()}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <TrendingDown className="w-4 h-4 text-rose-500" />$
+                        {Math.round(entry.user_predicted_low).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </Modal>
 
@@ -712,49 +801,22 @@ export default function PumpDumpHome() {
         onClose={() => setShowAboutModal(false)}
         title="How It Works"
       >
-        <div className="space-y-6 text-gray-300">
-          <div>
-            <h3 className="text-white font-medium mb-2">
-              Daily BTC Price Challenge
-            </h3>
-            <p className="text-gray-400">
-              Predict Bitcoin's price range for tomorrow and compete for daily
-              prizes. The more accurate your prediction, the higher your chance
-              of winning.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-900 rounded-lg p-4">
-              <h4 className="text-white font-medium mb-2">Prize Pool</h4>
-              <ul className="text-gray-400 space-y-1 text-sm">
-                <li>🥇 1st: 2,500 TON</li>
-                <li>🥈 2nd: 1,500 TON</li>
-                <li>🥉 3rd: 1,000 TON</li>
-              </ul>
+        <div className="space-y-4 text-gray-300">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 p-3 bg-gray-900 rounded-lg">
+              <div className="text-xl">1️⃣</div>
+              <p>Predict tomorrow's BTC high & low prices</p>
             </div>
 
-            <div className="bg-gray-900 rounded-lg p-4">
-              <h4 className="text-white font-medium mb-2">Scoring</h4>
-              <ul className="text-gray-400 space-y-1 text-sm">
-                <li>50% High accuracy</li>
-                <li>50% Low accuracy</li>
-                <li>Bonus for precision</li>
-              </ul>
+            <div className="flex items-center gap-2 p-3 bg-gray-900 rounded-lg">
+              <div className="text-xl">2️⃣</div>
+              <p>Pay 1 TON to submit your prediction</p>
             </div>
-          </div>
 
-          <div className="bg-gray-900 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="w-5 h-5 text-blue-400" />
-              <h4 className="text-white font-medium">Important Notes</h4>
+            <div className="flex items-center gap-2 p-3 bg-gray-900 rounded-lg">
+              <div className="text-xl">3️⃣</div>
+              <p>Most accurate prediction wins the prize pool!</p>
             </div>
-            <ul className="text-gray-400 space-y-2 text-sm">
-              <li>• All predictions must be submitted before midnight UTC</li>
-              <li>• Predictions are final once submitted</li>
-              <li>• Prizes distributed within 24 hours of round end</li>
-              <li>• Results based on Binance BTC/USDT price data</li>
-            </ul>
           </div>
         </div>
       </Modal>
