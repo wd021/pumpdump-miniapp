@@ -7,6 +7,16 @@ import autoprefixer from "autoprefixer";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // ignore warnings for now
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Ignore certain warnings
+        if (warning.code === "SOME_WARNING_CODE") return;
+        warn(warning);
+      },
+    },
+  },
   base: "/reactjs-template",
   plugins: [
     // Allows using React dev server along with building a React application with Vite.
