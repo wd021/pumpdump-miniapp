@@ -2,28 +2,7 @@ import { TrendingUp, TrendingDown, ExternalLink, Trophy } from "lucide-react";
 import { useState } from "react";
 import { Modal } from "@/components/Modal";
 import { supabase } from "@/utils/supabaseClient";
-
-// Types
-interface PredictionEntry {
-  user_predicted_low: number;
-  user_predicted_high: number;
-  winner_predicted_low: number;
-  winner_predicted_high: number;
-  winner_wallet_address: any;
-  final_low: number;
-  final_high: number;
-  total_pool: number;
-  period_id: number;
-  period_start_time: string | number | Date;
-  wallet_address: string;
-  predicted_high: number;
-  predicted_low: number;
-  ton_transaction_hash: string;
-  high_difference?: number;
-  low_difference?: number;
-  total_difference?: number;
-  created_at: string;
-}
+import { PredictionEntry } from "@/types/prediction";
 
 const HistoryContent = ({
   historyLoading,

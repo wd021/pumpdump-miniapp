@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { initData, useSignal } from "@telegram-apps/sdk-react";
 import {
   TrendingUp,
   TrendingDown,
@@ -19,12 +20,14 @@ import {
   useTonAddress,
   useTonConnectUI,
 } from "@tonconnect/ui-react";
-import { PredictionHistory } from "@/types/prediction";
+import { PredictionHistory, PredictionEntry } from "@/types/prediction";
 import { usePredictionPeriod } from "@/hooks/usePredictionPeriod";
 import { Modal } from "@/components/Modal";
 import { API_URL } from "@/utils/constants";
 
 import HistoryContent from "./historyContent";
+import { getTranslations } from "@/i18n/utils/getTranslation";
+import { publicUrl } from "@/helpers/publicUrl";
 
 const steps = [
   {
@@ -45,8 +48,11 @@ const steps = [
 ];
 
 export default function PumpDumpHome() {
+  const initDataState = useSignal(initData.state);
   const walletAddress = useTonAddress();
   const [tonConnectUI] = useTonConnectUI();
+
+  const t = getTranslations(initDataState?.user?.languageCode ?? "en");
 
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -286,13 +292,20 @@ export default function PumpDumpHome() {
 
   return (
     <div className="min-h-screen py-8">
+      <img
+        src={publicUrl("/logo.png")}
+        alt="PumpDump Logo"
+        className="w-1/4 mx-auto"
+      />
       <div className="max-w-3xl mx-auto p-4 space-y-6">
         {/* Header - Update prize pool */}
         <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
           <div className="flex flex-col items-center justify-between text-center">
-            <div className="text-gray-400 text-sm">Today's Prize Pool</div>
+            <div className="text-gray-400 text-sm">
+              {t.home["Today's prize pool"]}
+            </div>
             <div className="text-white font-bold text-3xl mt-2">
-              💰 {period ? `${period?.total_pool} TON` : "Loading..."}
+              💰 {period ? `${period?.total_pool} TON` : t.home["Loading..."]}
             </div>
             <div className="flex items-center gap-2 text-gray-400 mt-2">
               <Clock className="w-4 h-4" />
@@ -314,12 +327,18 @@ export default function PumpDumpHome() {
         <div className="rounded-2xl p-6 border border-gray-800 bg-gray-900">
           <div className="text-center relative">
             {loading ? (
-              <div className="text-gray-400">Loading price data...</div>
+              <div className="text-gray-400">
+                {t.home["Loading price data..."]}
+              </div>
             ) : error ? (
-              <div className="text-rose-500">Error: {error}</div>
+              <div className="text-rose-500">
+                {t.home["Error:"]} {error}
+              </div>
             ) : (
               <>
-                <div className="text-gray-400 text-sm">Current BTC Price</div>
+                <div className="text-gray-400 text-sm">
+                  {t.home["Current BTC price"]}
+                </div>
                 <div className="text-5xl font-bold text-white mb-4 mt-2 font-mono">
                   ${Math.round(stats.currentPrice).toLocaleString()}
                 </div>
@@ -329,7 +348,9 @@ export default function PumpDumpHome() {
                   <div>
                     <div className="flex items-center justify-center gap-2 text-emerald-500 mb-3">
                       <TrendingUp className="w-6 h-6" />
-                      <div className="text-base font-medium">Today's High</div>
+                      <div className="text-base font-medium">
+                        {t.home["Today's High"]}
+                      </div>
                     </div>
                     <div className="text-4xl font-bold text-white font-mono">
                       ${Math.round(stats.todayRange.high).toLocaleString()}
@@ -339,7 +360,9 @@ export default function PumpDumpHome() {
                   <div>
                     <div className="flex items-center justify-center gap-2 text-rose-500 mb-3">
                       <TrendingDown className="w-6 h-6" />
-                      <div className="text-base font-medium">Today's Low</div>
+                      <div className="text-base font-medium">
+                        {t.home["Today's Low"]}
+                      </div>
                     </div>
                     <div className="text-4xl font-bold text-white font-mono">
                       ${Math.round(stats.todayRange.low).toLocaleString()}
@@ -353,7 +376,7 @@ export default function PumpDumpHome() {
             {/* Leader Section - Redesigned with Emphasis on Accuracy */}
             <div className="bg-gray-900 p-4">
               <div className="text-sm text-gray-400 mb-2">
-                Leading Prediction
+                {t.home["Leading Prediction"]}
               </div>
               {currentLeader ? (
                 <div className="flex items-center justify-between">
@@ -394,14 +417,16 @@ export default function PumpDumpHome() {
                 </div>
               ) : (
                 <div className="text-gray-500 text-sm py-2">
-                  No predictions yet
+                  {t.home["No predictions yet"]}
                 </div>
               )}
             </div>
 
             {/* Your Prediction Section */}
             <div className="bg-gray-900 p-4">
-              <div className="text-sm text-gray-400 mb-2">Your Prediction</div>
+              <div className="text-sm text-gray-400 mb-2">
+                {t.home["Your Prediction"]}
+              </div>
               {walletPosition ? (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -442,7 +467,7 @@ export default function PumpDumpHome() {
                 </div>
               ) : (
                 <div className="text-gray-500 text-sm py-2">
-                  You haven't made a prediction for this round
+                  {t.home["You haven't made a prediction for this round"]}
                 </div>
               )}
             </div>
@@ -460,7 +485,7 @@ export default function PumpDumpHome() {
                 <div className="flex flex-col items-center gap-4 p-6">
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-semibold text-black">
-                      Enter Tomorrow's Race
+                      {t.home["Enter Tomorrow's Race"]}
                     </span>
                     <ArrowRight className="w-4 h-4 text-gray-600 group-hover:translate-x-0.5 transition-transform duration-300" />
                   </div>
@@ -477,10 +502,10 @@ export default function PumpDumpHome() {
             <div className="rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 p-6">
               <div className="text-center mb-4">
                 <h3 className="text-lg font-semibold mb-2">
-                  Connect Wallet to Predict
+                  {t.home["Connect Wallet to Predict"]}
                 </h3>
                 <p className="text-sm text-gray-400">
-                  Join the prediction game by connecting your wallet
+                  {t.home["Join the prediction game by connecting your wallet"]}
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2 text-center">
@@ -497,14 +522,14 @@ export default function PumpDumpHome() {
               className="bg-white text-black font-semibold p-4 rounded-xl flex items-center justify-center gap-2 transition-all"
             >
               <History className="w-5 h-5" />
-              History
+              {t.home["History"]}
             </button>
             <button
               onClick={() => setShowAboutModal(true)}
               className="bg-white text-black font-semibold p-4 rounded-xl flex items-center justify-center gap-2 transition-all"
             >
               <Info className="w-5 h-5" />
-              About
+              {t.home["About"]}
             </button>
           </div>
         </div>
@@ -600,7 +625,7 @@ export default function PumpDumpHome() {
       >
         <HistoryContent
           historyLoading={historyLoading}
-          predictionHistory={predictionHistory}
+          predictionHistory={predictionHistory as unknown as PredictionEntry[]}
         />
       </Modal>
 
