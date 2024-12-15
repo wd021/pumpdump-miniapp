@@ -4,243 +4,49 @@ import {
   TrendingDown,
   Clock,
   History,
-  X,
   Info,
   Crown,
-  // AlertCircle,
+  ArrowUpRight,
+  ArrowDownRight,
+  ArrowRight,
   ExternalLink,
   User,
 } from "lucide-react";
 import { supabase } from "@/utils/supabaseClient";
 import {
+  SendTransactionRequest,
   TonConnectButton,
-  // useTonConnectUI,
   useTonAddress,
+  useTonConnectUI,
 } from "@tonconnect/ui-react";
-import { publicUrl } from "@/helpers/publicUrl.ts";
+import { PredictionHistory } from "@/types/prediction";
+import { usePredictionPeriod } from "@/hooks/usePredictionPeriod";
+import { Modal } from "@/components/Modal";
+import { API_URL } from "@/utils/constants";
 
-interface PredictionPeriod {
-  id: number;
-  asset_id: number;
-  starts_at: string;
-  ends_at: string;
-  is_active: boolean;
-  buy_in: number;
-  total_pool: number;
-  current_price: number;
-  current_high: number;
-  current_low: number;
-  final_high: number;
-  final_low: number;
-  closed_at: string;
-  created_at: string;
-  updated_at: string;
-}
+import HistoryContent from "./historyContent";
 
-interface UserPrediction {
-  wallet_address: string;
-  period_id: number;
-  predicted_high: number;
-  predicted_low: number;
-}
-
-interface LeaderboardEntry {
-  wallet_address: string;
-  predicted_high: number;
-  predicted_low: number;
-  combined_accuracy_percentage: number;
-  rank: number;
-}
-
-interface WalletLeaderboardPosition {
-  wallet_address: string;
-  predicted_high: number;
-  predicted_low: number;
-  combined_accuracy_percentage: number;
-  rank: number;
-}
-
-interface PredictionHistory {
-  period_id: number;
-  period_start_time: string;
-  period_end_time: string;
-  final_high: number;
-  final_low: number;
-  winner_wallet_address: string;
-  winner_predicted_high: number;
-  winner_predicted_low: number;
-  winner_accuracy: number;
-  user_predicted_high: number;
-  user_predicted_low: number;
-  user_accuracy: number;
-  total_pool: number;
-}
-
-const usePredictionPeriod = () => {
-  const [period, setPeriod] = useState<PredictionPeriod | null>(null);
-  const [userPrediction, setUserPrediction] = useState<UserPrediction | null>(
-    null
-  );
-  const [currentLeader, setCurrentLeader] = useState<LeaderboardEntry | null>(
-    null
-  );
-  const [walletPosition, setWalletPosition] =
-    useState<WalletLeaderboardPosition | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const walletAddress = useTonAddress();
-
-  const fetchCurrentPeriod = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("t_prediction_periods")
-        .select("*")
-        .eq("is_active", true)
-        .lte("starts_at", new Date().toISOString())
-        .gte("ends_at", new Date().toISOString())
-        .single();
-
-      if (error) throw error;
-      setPeriod(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Separate effect for fetching user prediction
-  useEffect(() => {
-    const fetchUserPrediction = async () => {
-      if (!walletAddress || !period?.id) {
-        setUserPrediction(null);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from("t_user_predictions")
-          .select("*")
-          .eq("wallet_address", walletAddress)
-          .eq("period_id", period.id)
-          .single();
-
-        if (error) throw error;
-        setUserPrediction(data);
-      } catch (err) {
-        console.error("Error fetching user prediction:", err);
-        setUserPrediction(null);
-      }
-    };
-
-    fetchUserPrediction();
-  }, [walletAddress, period?.id]);
-
-  // Original period polling effect
-  useEffect(() => {
-    fetchCurrentPeriod();
-    const intervalId = setInterval(fetchCurrentPeriod, 15000);
-    return () => clearInterval(intervalId);
-  }, []);
-
-  const fetchLeaderboard = async (periodId: number) => {
-    try {
-      const { data, error } = await supabase.rpc("get_current_leaderboard", {
-        p_period_id: periodId,
-        p_limit: 1,
-      });
-
-      if (error) throw error;
-      if (data && data.length > 0) {
-        setCurrentLeader(data[0]);
-      }
-    } catch (err) {
-      console.error("Error fetching leaderboard:", err);
-    }
-  };
-
-  useEffect(() => {
-    if (period?.id) {
-      fetchLeaderboard(period.id);
-    }
-  }, [period?.id]);
-
-  useEffect(() => {
-    const fetchWalletPosition = async () => {
-      if (!walletAddress || !period?.id) {
-        setWalletPosition(null);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase.rpc(
-          "get_wallet_leaderboard_position",
-          {
-            p_period_id: period.id,
-            p_wallet_address: walletAddress,
-          }
-        );
-
-        if (error) throw error;
-        if (data && data.length > 0) {
-          setWalletPosition(data[0]);
-        } else {
-          setWalletPosition(null);
-        }
-      } catch (err) {
-        console.error("Error fetching wallet position:", err);
-        setWalletPosition(null);
-      }
-    };
-
-    fetchWalletPosition();
-  }, [walletAddress, period?.id]);
-
-  return {
-    period,
-    loading,
-    error,
-    userPrediction,
-    currentLeader,
-    walletPosition,
-  };
-};
-
-const Modal = ({
-  isOpen,
-  onClose,
-  title,
-  children,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 flex items-center justify-center z-50">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-lg m-4 p-6 z-10">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-white">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-};
+const steps = [
+  {
+    emoji: "🎯",
+    title: "Predict BTC Prices",
+    description: "Set tomorrow's BTC high & low prices",
+  },
+  {
+    emoji: "💎",
+    title: "Stake 1 TON",
+    description: "Submit your prediction to join",
+  },
+  {
+    emoji: "🏆",
+    title: "Win Prize Pool",
+    description: "Most accurate prediction wins!",
+  },
+];
 
 export default function PumpDumpHome() {
   const walletAddress = useTonAddress();
-  // const [tonConnectUI, setOptions] = useTonConnectUI();
+  const [tonConnectUI] = useTonConnectUI();
 
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -320,36 +126,55 @@ export default function PumpDumpHome() {
       }
 
       // 1. Send TON transaction
-      // const transaction: SendTransactionRequest = {
-      //   validUntil: Date.now() + 5 * 60 * 1000,
-      //   messages: [
-      //     {
-      //       address: "UQAS5RgeZdShqIIjhTtbFiLPask0eHUmbsltA99oybs8KDvm",
-      //       amount: "1000000", // 0.001 TON
-      //     },
-      //   ],
-      // };
+      const transaction: SendTransactionRequest = {
+        validUntil: Date.now() + 5 * 60 * 1000,
+        messages: [
+          {
+            address: "UQAS5RgeZdShqIIjhTtbFiLPask0eHUmbsltA99oybs8KDvm",
+            amount: "1000000", // 0.001 TON
+          },
+        ],
+      };
 
-      // const txResult = await tonConnectUI.sendTransaction(transaction);
+      await tonConnectUI.sendTransaction(transaction);
 
       // 2. Submit prediction to API
-      const response = await fetch(
-        "https://zyld7uqfrv5ruinxs7sdntcmsm0dbzez.lambda-url.us-east-1.on.aws/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            walletAddress: walletAddress,
-            periodId: period.id,
-            predictedHigh: parseFloat(prediction.high),
-            predictedLow: parseFloat(prediction.low),
-          }),
-        }
-      );
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          walletAddress: walletAddress,
+          predictedHigh: parseFloat(prediction.high),
+          predictedLow: parseFloat(prediction.low),
+        }),
+      });
+
+      const data = await response.json();
 
       if (!response.ok) {
+        // Handle specific error codes from the backend
+        if (data.error) {
+          switch (data.error.code) {
+            case "DUPLICATE_TRANSACTION":
+              throw new Error(
+                "This TON transaction has already been used for another prediction"
+              );
+            case "INVALID_PREDICTION_VALUES":
+              throw new Error(
+                "Your predicted low price must be less than your predicted high price"
+              );
+            case "DUPLICATE_PREDICTION":
+              throw new Error(
+                "You've already submitted a prediction for this round. Wait for the next day!"
+              );
+            default:
+              throw new Error(
+                data.error.message || "Failed to submit prediction"
+              );
+          }
+        }
         throw new Error("Failed to submit prediction");
       }
 
@@ -373,6 +198,38 @@ export default function PumpDumpHome() {
   const SubmitStatusModal = () => {
     if (submitStatus === "idle") return null;
 
+    const getStatusContent = () => {
+      switch (submitStatus) {
+        case "loading":
+          return {
+            title: "Submitting...",
+            message: "Processing your prediction...",
+            className: "text-gray-400",
+          };
+        case "success":
+          return {
+            title: "Success!",
+            message:
+              "Your prediction has been submitted successfully! Good luck! 🍀",
+            className: "text-emerald-500",
+          };
+        case "error":
+          return {
+            title: "Error",
+            message: submitError || "An unexpected error occurred",
+            className: "text-rose-500",
+          };
+        default:
+          return {
+            title: "",
+            message: "",
+            className: "",
+          };
+      }
+    };
+
+    const content = getStatusContent();
+
     return (
       <Modal
         isOpen={
@@ -381,25 +238,17 @@ export default function PumpDumpHome() {
           submitStatus === "error"
         }
         onClose={() => setSubmitStatus("idle")}
-        title={
-          submitStatus === "loading"
-            ? "Submitting..."
-            : submitStatus === "success"
-            ? "Success!"
-            : "Error"
-        }
+        title={content.title}
       >
         <div className="p-4 text-center">
-          {submitStatus === "loading" && (
-            <div className="text-gray-400">Processing your prediction...</div>
-          )}
-          {submitStatus === "success" && (
-            <div className="text-emerald-500">
-              Your prediction has been submitted successfully!
-            </div>
-          )}
+          <div className={content.className}>{content.message}</div>
           {submitStatus === "error" && (
-            <div className="text-rose-500">{submitError}</div>
+            <button
+              onClick={() => setSubmitStatus("idle")}
+              className="mt-4 px-4 py-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors"
+            >
+              Try Again
+            </button>
           )}
         </div>
       </Modal>
@@ -436,35 +285,42 @@ export default function PumpDumpHome() {
   }, [showHistoryModal, walletAddress]);
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <img src={publicUrl("/logo.png")} alt="Pumpdump Logo" className="w-1/2" />
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen py-8">
       <div className="max-w-3xl mx-auto p-4 space-y-6">
         {/* Header - Update prize pool */}
         <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
           <div className="flex flex-col items-center justify-between text-center">
             <div className="text-gray-400 text-sm">Today's Prize Pool</div>
             <div className="text-white font-bold text-3xl mt-2">
-              {period ? `${period?.total_pool} TON` : "Loading..."}
+              💰 {period ? `${period?.total_pool} TON` : "Loading..."}
+            </div>
+            <div className="flex items-center gap-2 text-gray-400 mt-2">
+              <Clock className="w-4 h-4" />
+              <div className="font-mono">
+                <span className="text-white">
+                  {`${String(countdown.hours).padStart(2, "0")}:${String(
+                    countdown.minutes
+                  ).padStart(2, "0")}:${String(countdown.seconds).padStart(
+                    2,
+                    "0"
+                  )}`}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Main Game Panel - Add loading state */}
-        <div className="space-y-6">
-          <div className="bg-gray-900 rounded-2xl p-8 text-center border border-gray-800">
+        <div className="rounded-2xl p-6 border border-gray-800 bg-gray-900">
+          <div className="text-center relative">
             {loading ? (
               <div className="text-gray-400">Loading price data...</div>
             ) : error ? (
               <div className="text-rose-500">Error: {error}</div>
             ) : (
               <>
-                <div className="text-gray-400 mb-3">Current BTC Price</div>
-                <div className="text-5xl font-bold text-white mb-4">
+                <div className="text-gray-400 text-sm">Current BTC Price</div>
+                <div className="text-5xl font-bold text-white mb-4 mt-2 font-mono">
                   ${Math.round(stats.currentPrice).toLocaleString()}
                 </div>
 
@@ -475,7 +331,7 @@ export default function PumpDumpHome() {
                       <TrendingUp className="w-6 h-6" />
                       <div className="text-base font-medium">Today's High</div>
                     </div>
-                    <div className="text-4xl font-bold text-white">
+                    <div className="text-4xl font-bold text-white font-mono">
                       ${Math.round(stats.todayRange.high).toLocaleString()}
                     </div>
                   </div>
@@ -485,7 +341,7 @@ export default function PumpDumpHome() {
                       <TrendingDown className="w-6 h-6" />
                       <div className="text-base font-medium">Today's Low</div>
                     </div>
-                    <div className="text-4xl font-bold text-white">
+                    <div className="text-4xl font-bold text-white font-mono">
                       ${Math.round(stats.todayRange.low).toLocaleString()}
                     </div>
                   </div>
@@ -493,11 +349,10 @@ export default function PumpDumpHome() {
               </>
             )}
           </div>
-
-          {/* Leader Section - Redesigned with Emphasis on Accuracy */}
-          <div>
-            <div className="bg-gray-900 rounded-2xl p-4 border border-gray-800">
-              <div className="text-sm text-gray-400 mb-2 ml-1">
+          <div className="mt-6">
+            {/* Leader Section - Redesigned with Emphasis on Accuracy */}
+            <div className="bg-gray-900 p-4">
+              <div className="text-sm text-gray-400 mb-2">
                 Leading Prediction
               </div>
               {currentLeader ? (
@@ -543,14 +398,10 @@ export default function PumpDumpHome() {
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Your Prediction Section */}
-          <div>
-            <div className="bg-gray-900 rounded-2xl p-4 border border-gray-800">
-              <div className="text-sm text-gray-400 mb-2 ml-1">
-                Your Prediction
-              </div>
+            {/* Your Prediction Section */}
+            <div className="bg-gray-900 p-4">
+              <div className="text-sm text-gray-400 mb-2">Your Prediction</div>
               {walletPosition ? (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -599,44 +450,58 @@ export default function PumpDumpHome() {
         </div>
 
         {/* Action Buttons - Cleaner Look */}
-        <div className="grid grid-cols-1 gap-4">
-          <div className="flex items-center gap-2 bg-gray-950/50 rounded-lg p-2 mt-2">
-            <Clock className="w-4 h-4 text-blue-400" />
-            <div className="font-mono text-white">
-              {`${String(countdown.hours).padStart(2, "0")}:${String(
-                countdown.minutes
-              ).padStart(2, "0")}:${String(countdown.seconds).padStart(
-                2,
-                "0"
-              )}`}
-            </div>
-            <div className="text-gray-400 text-sm ml-2">
-              tomorrow's round starts
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 gap-6">
           {walletAddress ? (
-            <button
-              onClick={() => setShowPredictionModal(true)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all font-bold"
-            >
-              Predict Tomorrow's Price (1 TON)
-            </button>
+            <div className="rounded-xl bg-white p-0.5 shadow-lg transition-all duration-300">
+              <button
+                onClick={() => setShowPredictionModal(true)}
+                className="w-full rounded-lg bg-white"
+              >
+                <div className="flex flex-col items-center gap-4 p-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-semibold text-black">
+                      Enter Tomorrow's Race
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-gray-600 group-hover:translate-x-0.5 transition-transform duration-300" />
+                  </div>
+
+                  <div className="flex gap-x-2 text-black font-semibold">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
+                      <div className="text-sm">💰 1 TON</div>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </div>
           ) : (
-            <TonConnectButton className="w-full" />
+            <div className="rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 p-6">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold mb-2">
+                  Connect Wallet to Predict
+                </h3>
+                <p className="text-sm text-gray-400">
+                  Join the prediction game by connecting your wallet
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-center">
+                <div className="w-full flex items-center justify-center">
+                  <TonConnectButton />
+                </div>
+              </div>
+            </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => setShowHistoryModal(true)}
-              className="bg-gray-900 hover:bg-gray-800 text-white py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all"
+              className="bg-white text-black font-semibold p-4 rounded-xl flex items-center justify-center gap-2 transition-all"
             >
               <History className="w-5 h-5" />
               History
             </button>
             <button
               onClick={() => setShowAboutModal(true)}
-              className="bg-gray-900 hover:bg-gray-800 text-white py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all"
+              className="bg-white text-black font-semibold p-4 rounded-xl flex items-center justify-center gap-2 transition-all"
             >
               <Info className="w-5 h-5" />
               About
@@ -649,45 +514,81 @@ export default function PumpDumpHome() {
       <Modal
         isOpen={showPredictionModal}
         onClose={() => setShowPredictionModal(false)}
-        title="Tomorrow's BTC Price"
+        title="Predict Tomorrow's BTC Price"
       >
         <form onSubmit={handleSubmitPrediction} className="space-y-6">
           <div className="space-y-4">
-            <div>
-              <label className="text-gray-400 text-sm block mb-2">
-                Predict High ($)
+            <div className="relative">
+              <label className="flex items-center gap-2 text-gray-700 font-medium mb-2">
+                <ArrowUpRight className="w-4 h-4 text-green-500" />
+                Predict High
               </label>
-              <input
-                type="number"
-                value={prediction.high}
-                onChange={(e) =>
-                  setPrediction({ ...prediction, high: e.target.value })
-                }
-                className="w-full bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500"
-                placeholder="Enter predicted high..."
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+                  $
+                </span>
+                <input
+                  type="number"
+                  value={prediction.high}
+                  onChange={(e) =>
+                    setPrediction({ ...prediction, high: e.target.value })
+                  }
+                  className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 
+                         focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+                         transition-all duration-200"
+                  placeholder="Enter predicted high..."
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-gray-400 text-sm block mb-2">
-                Predict Low ($)
+
+            <div className="relative">
+              <label className="flex items-center gap-2 text-gray-700 font-medium mb-2">
+                <ArrowDownRight className="w-4 h-4 text-red-500" />
+                Predict Low
               </label>
-              <input
-                type="number"
-                value={prediction.low}
-                onChange={(e) =>
-                  setPrediction({ ...prediction, low: e.target.value })
-                }
-                className="w-full bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500"
-                placeholder="Enter predicted low..."
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+                  $
+                </span>
+                <input
+                  type="number"
+                  value={prediction.low}
+                  onChange={(e) =>
+                    setPrediction({ ...prediction, low: e.target.value })
+                  }
+                  className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 
+                         focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+                         transition-all duration-200"
+                  placeholder="Enter predicted low..."
+                />
+              </div>
+            </div>
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-4">
+              <div className="flex items-center gap-3">
+                <Crown className="w-5 h-5 text-yellow-500" />
+                <div className="text-sm text-gray-600">
+                  <span className="font-semibold">
+                    Most accurate prediction wins!
+                  </span>
+                  <br />
+                  <span className="text-gray-500">
+                    Get closest to tomorrow's actual high & low to win the
+                    entire prize pool
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-semibold transition-all"
-          >
-            Submit Prediction (1 TON)
-          </button>
+          <div>
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 
+                     text-white py-3 px-6 rounded-lg font-semibold transition-all duration-200
+                     flex items-center justify-center gap-2 group"
+            >
+              <span>Submit Prediction</span>
+            </button>
+          </div>
         </form>
       </Modal>
 
@@ -697,108 +598,10 @@ export default function PumpDumpHome() {
         onClose={() => setShowHistoryModal(false)}
         title="Past Predictions"
       >
-        <div className="space-y-4 max-h-[60vh] overflow-y-auto hide-scrollbar">
-          {historyLoading ? (
-            <div className="text-gray-400 text-center py-4">
-              Loading history...
-            </div>
-          ) : predictionHistory.length === 0 ? (
-            <div className="text-gray-400 text-center py-4">
-              No prediction history found
-            </div>
-          ) : (
-            predictionHistory.map((entry) => (
-              <div
-                key={entry.period_id}
-                className="border border-gray-800 rounded-lg p-4 space-y-4"
-              >
-                <div className="flex justify-between items-center">
-                  <div className="text-gray-400">
-                    {new Date(entry.period_start_time).toLocaleDateString()}
-                  </div>
-                  <div className="text-gray-400">💰 {entry.total_pool} TON</div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  {/* Final Results */}
-                  <div>
-                    <div className="text-sm text-gray-400 mb-2">Final</div>
-                    {entry.final_high ? (
-                      <div className="text-white">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-green-500" />$
-                          {Math.round(entry.final_high).toLocaleString()}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <TrendingDown className="w-4 h-4 text-rose-500" />$
-                          {Math.round(entry.final_low).toLocaleString()}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-gray-500 text-sm">Pending</div>
-                    )}
-                  </div>
-
-                  {/* Winner's Prediction */}
-                  <div>
-                    <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-                      <span>Winner</span>
-                      {entry.winner_accuracy && (
-                        <div className="bg-green-500/10 px-2 py-0.5 rounded">
-                          <span className="text-green-500">
-                            {entry.winner_accuracy.toFixed(1)}%
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    {entry.winner_wallet_address ? (
-                      <div className="text-white">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-green-500" />$
-                          {Math.round(
-                            entry.winner_predicted_high
-                          ).toLocaleString()}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <TrendingDown className="w-4 h-4 text-rose-500" />$
-                          {Math.round(
-                            entry.winner_predicted_low
-                          ).toLocaleString()}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-gray-500 text-sm">Pending</div>
-                    )}
-                  </div>
-
-                  {/* Your Prediction */}
-                  <div>
-                    <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-                      <span>You</span>
-                      {entry.user_accuracy && (
-                        <div className="bg-green-500/10 px-2 py-0.5 rounded">
-                          <span className="text-green-500">
-                            {entry.user_accuracy.toFixed(1)}%
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-white">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-green-500" />$
-                        {Math.round(entry.user_predicted_high).toLocaleString()}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <TrendingDown className="w-4 h-4 text-rose-500" />$
-                        {Math.round(entry.user_predicted_low).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+        <HistoryContent
+          historyLoading={historyLoading}
+          predictionHistory={predictionHistory}
+        />
       </Modal>
 
       {/* About Modal - Simplified */}
@@ -807,22 +610,26 @@ export default function PumpDumpHome() {
         onClose={() => setShowAboutModal(false)}
         title="How It Works"
       >
-        <div className="space-y-4 text-gray-300">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 p-3 bg-gray-900 rounded-lg">
-              <div className="text-xl">1️⃣</div>
-              <p>Predict tomorrow's BTC high & low prices</p>
+        <div className="space-y-6">
+          {steps.map((step, index) => (
+            <div
+              key={index}
+              className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all"
+            >
+              <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm">
+                <span className="text-xl">{step.emoji}</span>
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900">{step.title}</h3>
+                <p className="text-gray-600 text-sm mt-1">{step.description}</p>
+              </div>
             </div>
+          ))}
 
-            <div className="flex items-center gap-2 p-3 bg-gray-900 rounded-lg">
-              <div className="text-xl">2️⃣</div>
-              <p>Pay 1 TON to submit your prediction</p>
-            </div>
-
-            <div className="flex items-center gap-2 p-3 bg-gray-900 rounded-lg">
-              <div className="text-xl">3️⃣</div>
-              <p>Most accurate prediction wins the prize pool!</p>
-            </div>
+          <div className="bg-blue-50 p-4 rounded-xl">
+            <p className="text-blue-600 text-sm text-center font-medium">
+              Ready to make your prediction? 🚀
+            </p>
           </div>
         </div>
       </Modal>
