@@ -9,6 +9,9 @@ export const zh = {
     "Leading Prediction": "领先预测",
     "Your Prediction": "你的预测",
     "Enter Tomorrow's Race": "参加明天的比赛",
+    "Connect Wallet to Predict": "连接钱包进行预测",
+    "Join the prediction game by connecting your wallet":
+      "通过连接钱包加入预测游戏",
     History: "历史",
     About: "关于",
     "Loading...": "正在加载...",

@@ -9,6 +9,9 @@ export const ko = {
     "Leading Prediction": "선도 예측",
     "Your Prediction": "당신의 예측",
     "Enter Tomorrow's Race": "내일 레이스에 참여하세요",
+    "Connect Wallet to Predict": "지갑을 연결하여 예측하세요",
+    "Join the prediction game by connecting your wallet":
+      "지갑을 연결하여 예측 게임에 참여하세요",
     History: "역사",
     About: "에 대해",
     "Loading...": "로드 중...",

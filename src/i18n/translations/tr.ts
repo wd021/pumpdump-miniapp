@@ -9,6 +9,9 @@ export const tr = {
     "Leading Prediction": "Önde gelen tahmin",
     "Your Prediction": "Tahmininiz",
     "Enter Tomorrow's Race": "Yarınki yarışa katılın",
+    "Connect Wallet to Predict": "Tahmin etmek için cüzdanınızı bağlayın",
+    "Join the prediction game by connecting your wallet":
+      "Cüzdanınızı bağlayarak tahmin oyununa katılın",
     History: "Tarih",
     About: "Hakkında",
     "Loading...": "Yükleniyor...",

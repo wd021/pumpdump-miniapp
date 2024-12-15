@@ -9,6 +9,9 @@ export const fr = {
     "Leading Prediction": "Prédiction principale",
     "Your Prediction": "Votre prédiction",
     "Enter Tomorrow's Race": "Inscrivez-vous à la course de demain",
+    "Connect Wallet to Predict": "Connectez votre portefeuille pour prédire",
+    "Join the prediction game by connecting your wallet":
+      "Rejoignez le jeu de prédiction en connectant votre portefeuille",
     History: "Histoire",
     About: "À propos de",
     "Loading...": "Chargement...",

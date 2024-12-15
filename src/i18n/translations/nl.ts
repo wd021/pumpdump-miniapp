@@ -9,6 +9,9 @@ export const nl = {
     "Leading Prediction": "Vooraanstaande voorspelling",
     "Your Prediction": "Uw voorspelling",
     "Enter Tomorrow's Race": "Doe mee aan de race van morgen",
+    "Connect Wallet to Predict": "Verbind je portemonnee om te voorspellen",
+    "Join the prediction game by connecting your wallet":
+      "Doe mee aan het voorspellingsspel door je portemonnee te verbinden",
     History: "Geschiedenis",
     About: "Over",
     "Loading...": "Laden...",
