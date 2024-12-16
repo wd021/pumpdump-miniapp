@@ -43,7 +43,8 @@ const steps = [
   {
     emoji: "🏆",
     title: "Win Prize Pool",
-    description: "Most accurate prediction wins!",
+    description:
+      "Most accurate prediction wins the entire prize pool. Pump Dump takes a 5% fee.",
   },
 ];
 
@@ -419,7 +420,7 @@ export default function PumpDumpHome() {
                 </div>
               ) : (
                 <div className="text-gray-500 text-sm py-2">
-                  {t.home["No predictions yet"]}
+                  {t.home["No predictions for this round"]}
                 </div>
               )}
             </div>

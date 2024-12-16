@@ -7,6 +7,7 @@ export const es = {
     "Today's High": "El máximo de hoy",
     "Today's Low": "El mínimo de hoy",
     "Leading Prediction": "Predicción líder",
+    "No predictions for this round": "No hay predicciones para esta ronda",
     "Your Prediction": "Tu predicción",
     "Enter Tomorrow's Race": "Participa en la carrera de mañana",
     "Connect Wallet to Predict": "Conecta tu monedero para predecir",
@@ -59,6 +60,7 @@ export const es = {
     "Pay 1 TON": "Paga 1 TON",
     "Submit your prediction to join": "Envíe su predicción para unirse",
     "Win Prize Pool": "Gana la bolsa de premios",
-    "Most accurate prediction wins!": "¡La predicción más precisa gana!",
+    "Most accurate prediction wins the entire prize pool. Pump Dump takes a 5% fee.":
+      "La predicción más precisa gana todo el premio. Pump Dump cobra una comisión del 5%.",
   },
 } as const;

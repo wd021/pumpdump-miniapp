@@ -8,6 +8,7 @@ export const tr = {
     "Today's Low": "Bugünün en düşük değeri",
     "Leading Prediction": "Önde gelen tahmin",
     "Your Prediction": "Tahmininiz",
+    "No predictions for this round": "Bu tur için tahmin yok",
     "Enter Tomorrow's Race": "Yarınki yarışa katılın",
     "Connect Wallet to Predict": "Tahmin etmek için cüzdanınızı bağlayın",
     "Join the prediction game by connecting your wallet":
@@ -59,6 +60,7 @@ export const tr = {
     "Pay 1 TON": "1 TON ödeyin",
     "Submit your prediction to join": "Tahmininizi göndererek katılın",
     "Win Prize Pool": "Ödül havuzunu kazan",
-    "Most accurate prediction wins!": "En doğru tahmin kazanır!",
+    "Most accurate prediction wins the entire prize pool. Pump Dump takes a 5% fee.":
+      "En doğru tahmin tüm ödül havuzunu kazanır. Pump Dump %5 ücret alır.",
   },
 } as const;

@@ -8,6 +8,7 @@ export const ko = {
     "Today's Low": "오늘의 최저치",
     "Leading Prediction": "선도 예측",
     "Your Prediction": "당신의 예측",
+    "No predictions for this round": "이 라운드에 대한 예측이 없습니다",
     "Enter Tomorrow's Race": "내일 레이스에 참여하세요",
     "Connect Wallet to Predict": "지갑을 연결하여 예측하세요",
     "Join the prediction game by connecting your wallet":
@@ -59,6 +60,7 @@ export const ko = {
     "Pay 1 TON": "1 TON을 지불하세요",
     "Submit your prediction to join": "예측을 제출하여 참여하세요",
     "Win Prize Pool": "상금 풀을 획득하세요",
-    "Most accurate prediction wins!": "가장 정확한 예측이 승리합니다!",
+    "Most accurate prediction wins the entire prize pool. Pump Dump takes a 5% fee.":
+      "가장 정확한 예측이 전체 상금 풀을 획득합니다. Pump Dump는 5%의 수수료를 부과합니다.",
   },
 } as const;

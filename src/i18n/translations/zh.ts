@@ -7,6 +7,7 @@ export const zh = {
     "Today's High": "当天的最高价",
     "Today's Low": "当天的最低价",
     "Leading Prediction": "领先预测",
+    "No predictions for this round": "本轮没有预测",
     "Your Prediction": "你的预测",
     "Enter Tomorrow's Race": "参加明天的比赛",
     "Connect Wallet to Predict": "连接钱包进行预测",
@@ -58,6 +59,7 @@ export const zh = {
     "Pay 1 TON": "支付 1 TON",
     "Submit your prediction to join": "提交您的预测以加入",
     "Win Prize Pool": "赢得奖池",
-    "Most accurate prediction wins!": "最准确的预测获胜!",
+    "Most accurate prediction wins the entire prize pool. Pump Dump takes a 5% fee.":
+      "最准确的预测赢得整个奖池。Pump Dump收取5%的手续费。",
   },
 } as const;

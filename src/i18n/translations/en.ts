@@ -7,6 +7,7 @@ export const en = {
     "Today's High": "Today's High",
     "Today's Low": "Today's Low",
     "Leading Prediction": "Leading Prediction",
+    "No predictions for this round": "No predictions for this round",
     "Your Prediction": "Your Prediction",
     "Enter Tomorrow's Race": "Enter Tomorrow's Race",
     "Connect Wallet to Predict": "Connect Wallet to Predict",
@@ -61,6 +62,7 @@ export const en = {
     "Pay 1 TON": "Pay 1 TON",
     "Submit your prediction to join": "Submit your prediction to join",
     "Win Prize Pool": "Win Prize Pool",
-    "Most accurate prediction wins!": "Most accurate prediction wins!",
+    "Most accurate prediction wins the entire prize pool. Pump Dump takes a 5% fee.":
+      "Most accurate prediction wins the entire prize pool. Pump Dump takes a 5% fee.",
   },
 } as const;

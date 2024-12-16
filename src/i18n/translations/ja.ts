@@ -8,6 +8,7 @@ export const ja = {
     "Today's Low": "今日の最安値",
     "Leading Prediction": "リード予測",
     "Your Prediction": "あなたの予測",
+    "No predictions for this round": "このラウンドの予測はありません",
     "Enter Tomorrow's Race": "明日のレースに参加する",
     "Connect Wallet to Predict": "ウォレットを接続して予測する",
     "Join the prediction game by connecting your wallet":
@@ -59,6 +60,7 @@ export const ja = {
     "Pay 1 TON": "1 TONを支払う",
     "Submit your prediction to join": "予測を送信して参加する",
     "Win Prize Pool": "賞金を勝ち取る",
-    "Most accurate prediction wins!": "最も正確な予測が勝利!",
+    "Most accurate prediction wins the entire prize pool. Pump Dump takes a 5% fee.":
+      "最も正確な予測が全額の賞金を獲得します。Pump Dumpは5%の手数料を徴収します。",
   },
 } as const;

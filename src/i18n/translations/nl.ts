@@ -8,6 +8,7 @@ export const nl = {
     "Today's Low": "De laagste van vandaag",
     "Leading Prediction": "Vooraanstaande voorspelling",
     "Your Prediction": "Uw voorspelling",
+    "No predictions for this round": "Geen voorspellingen voor deze ronde",
     "Enter Tomorrow's Race": "Doe mee aan de race van morgen",
     "Connect Wallet to Predict": "Verbind je portemonnee om te voorspellen",
     "Join the prediction game by connecting your wallet":
@@ -60,6 +61,7 @@ export const nl = {
     "Submit your prediction to join":
       "Verzenden uw voorspelling om deel te nemen",
     "Win Prize Pool": "Win de prijs",
-    "Most accurate prediction wins!": "De meest accurate voorspelling wint!",
+    "Most accurate prediction wins the entire prize pool. Pump Dump takes a 5% fee.":
+      "De meest accurate voorspelling wint de hele prijs. Pump Dump neemt een vergoeding van 5%.",
   },
 } as const;
