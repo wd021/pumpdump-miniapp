@@ -12,7 +12,6 @@ import {
   ArrowRight,
   ExternalLink,
   User,
-  Check,
 } from "lucide-react";
 import { supabase } from "@/utils/supabaseClient";
 import {
