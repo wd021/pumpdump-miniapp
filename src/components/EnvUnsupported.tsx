@@ -5,6 +5,7 @@ import {
   isRGB,
 } from "@telegram-apps/sdk-react";
 import { useMemo } from "react";
+import { publicUrl } from "@/helpers/publicUrl";
 
 export function EnvUnsupported() {
   const [platform, isDark] = useMemo(() => {
@@ -29,13 +30,19 @@ export function EnvUnsupported() {
     >
       <Placeholder
         header="Oops"
-        description="You are using too old Telegram client to run this application"
+        description="Open the Pump Dump bot in Telegram to use it"
       >
-        <img
-          alt="Telegram sticker"
-          src="https://xelene.me/telegram.gif"
-          style={{ display: "block", width: "144px", height: "144px" }}
-        />
+        <a
+          href="https://t.me/pumpdumpbot"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            alt="Telegram sticker"
+            src={publicUrl("logo.png")}
+            style={{ display: "block", width: "144px", height: "144px" }}
+          />
+        </a>
       </Placeholder>
     </AppRoot>
   );

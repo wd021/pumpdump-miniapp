@@ -148,7 +148,7 @@ export default function PumpDumpHome() {
         messages: [
           {
             address: "UQAS5RgeZdShqIIjhTtbFiLPask0eHUmbsltA99oybs8KDvm",
-            amount: "1000000", // 0.001 TON
+            amount: "1000000000", // 1 TON
           },
         ],
       };
