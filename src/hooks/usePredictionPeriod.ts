@@ -21,6 +21,8 @@ export const usePredictionPeriod = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const walletAddress = useTonAddress();
+  const [tomorrowsPrediction, setTomorrowsPrediction] =
+    useState<UserPrediction | null>(null);
 
   const fetchCurrentPeriod = async () => {
     try {
@@ -128,6 +130,41 @@ export const usePredictionPeriod = () => {
     fetchWalletPosition();
   }, [walletAddress, period?.id]);
 
+  // Add new effect to fetch tomorrow's prediction
+  useEffect(() => {
+    const fetchTomorrowsPrediction = async () => {
+      if (!walletAddress || !period?.id) {
+        setTomorrowsPrediction(null);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("t_user_predictions")
+          .select("*")
+          .eq("wallet_address", walletAddress)
+          .eq("period_id", period.id + 1)
+          .single();
+
+        if (error) {
+          if (error.code !== "PGRST116") {
+            // No rows returned
+            console.error("Error fetching tomorrow's prediction:", error);
+          }
+          setTomorrowsPrediction(null);
+          return;
+        }
+
+        setTomorrowsPrediction(data);
+      } catch (err) {
+        console.error("Error fetching tomorrow's prediction:", err);
+        setTomorrowsPrediction(null);
+      }
+    };
+
+    fetchTomorrowsPrediction();
+  }, [walletAddress, period?.id]);
+
   return {
     period,
     loading,
@@ -135,5 +172,6 @@ export const usePredictionPeriod = () => {
     userPrediction,
     currentLeader,
     walletPosition,
+    tomorrowsPrediction,
   };
 };

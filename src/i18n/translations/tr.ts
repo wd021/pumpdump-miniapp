@@ -20,6 +20,9 @@ export const tr = {
     "Loading...": "Yükleniyor...",
     "Loading price data...": "Fiyat verileri yükleniyor...",
     "Error:": "Hata:",
+    "Your Prediction for Tomorrow": "Yarınki Tahmininiz",
+    "Come back tomorrow to submit your prediction for the following day!":
+      "Ertesi günün tahmininizi göndermek için yarın geri dönün!",
   },
   predict: {
     "Predict Tomorrow's BTC Price": "Yarının BTC fiyatını tahmin edin",

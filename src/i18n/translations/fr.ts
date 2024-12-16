@@ -20,6 +20,9 @@ export const fr = {
     "Loading...": "Chargement...",
     "Loading price data...": "Chargement des données de prix...",
     "Error:": "Erreur:",
+    "Your Prediction for Tomorrow": "Votre prédiction pour demain",
+    "Come back tomorrow to submit your prediction for the following day!":
+      "Revenez demain pour soumettre votre prédiction pour le lendemain!",
   },
   predict: {
     "Predict Tomorrow's BTC Price": "Prédisez le prix de BTC de demain",

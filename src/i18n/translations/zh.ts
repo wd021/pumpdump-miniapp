@@ -19,6 +19,9 @@ export const zh = {
     "Loading...": "正在加载...",
     "Loading price data...": "正在加载价格数据...",
     "Error:": "错误:",
+    "Your Prediction for Tomorrow": "您的明天预测",
+    "Come back tomorrow to submit your prediction for the following day!":
+      "明天回来提交您的下一天预测!",
   },
   predict: {
     "Predict Tomorrow's BTC Price": "明天的 BTC 价格预测",

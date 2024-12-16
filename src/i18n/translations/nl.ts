@@ -20,6 +20,9 @@ export const nl = {
     "Loading...": "Laden...",
     "Loading price data...": "Prijsgegevens worden geladen...",
     "Error:": "Fout:",
+    "Your Prediction for Tomorrow": "Uw voorspelling voor morgen",
+    "Come back tomorrow to submit your prediction for the following day!":
+      "Kom morgen terug om uw voorspelling voor de volgende dag in te dienen!",
   },
   predict: {
     "Predict Tomorrow's BTC Price": "Voorspeld de BTC-prijs van morgen",

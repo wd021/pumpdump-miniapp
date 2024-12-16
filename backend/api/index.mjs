@@ -95,6 +95,42 @@ const handleSupabaseError = (error) => {
   };
 };
 
+// Add this helper function for delay
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Add this function to check for valid transaction
+const checkTransaction = async (
+  walletAddress,
+  apiKey,
+  targetWallet,
+  requiredAmount
+) => {
+  const response = await axios.get(
+    `https://toncenter.com/api/v2/getTransactions`,
+    {
+      params: {
+        address: walletAddress,
+        limit: 10,
+        to_lt: 0,
+        archival: false,
+      },
+      headers: {
+        "X-API-Key": apiKey,
+      },
+    }
+  );
+
+  if (!response.data.ok) {
+    throw new Error("Failed to fetch TON transactions");
+  }
+
+  return response.data.result.find(
+    (tx) =>
+      tx.in_msg.destination === targetWallet &&
+      tx.in_msg.value === requiredAmount
+  );
+};
+
 export const handler = async (event) => {
   // Handle OPTIONS request for CORS preflight
   if (event.requestContext?.http?.method === "OPTIONS") {
@@ -108,12 +144,10 @@ export const handler = async (event) => {
   try {
     validateEnvVars();
 
-    // Extract parameters from the request
     const { walletAddress, predictedHigh, predictedLow } = JSON.parse(
       event.body
     );
 
-    // Validate input parameters
     if (!walletAddress || !predictedHigh || !predictedLow) {
       return {
         statusCode: 400,
@@ -122,38 +156,32 @@ export const handler = async (event) => {
       };
     }
 
-    // Query TON transactions first
-    const tonResponse = await axios.get(
-      `https://toncenter.com/api/v2/getTransactions`,
-      {
-        params: {
-          address: walletAddress,
-          limit: 10,
-          to_lt: 0,
-          archival: false,
-        },
-        headers: {
-          "X-API-Key": process.env.TONCENTER_API_KEY,
-        },
+    // Add retry logic
+    let validTransaction = null;
+    const retryDelays = [5000, 15000, 30000]; // Delays in milliseconds
+
+    for (let i = 0; i < retryDelays.length; i++) {
+      validTransaction = await checkTransaction(
+        walletAddress,
+        process.env.TONCENTER_API_KEY,
+        process.env.TARGET_WALLET,
+        process.env.REQUIRED_AMOUNT
+      );
+
+      if (validTransaction) break;
+
+      if (i < retryDelays.length - 1) {
+        await delay(retryDelays[i]);
       }
-    );
-
-    if (!tonResponse.data.ok) {
-      throw new Error("Failed to fetch TON transactions");
     }
-
-    // Validate transaction
-    const validTransaction = tonResponse.data.result.find(
-      (tx) =>
-        tx.in_msg.destination === process.env.TARGET_WALLET &&
-        tx.in_msg.value === process.env.REQUIRED_AMOUNT
-    );
 
     if (!validTransaction) {
       return {
         statusCode: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ error: "No valid transaction found" }),
+        body: JSON.stringify({
+          error: "No valid transaction found after multiple attempts",
+        }),
       };
     }
 

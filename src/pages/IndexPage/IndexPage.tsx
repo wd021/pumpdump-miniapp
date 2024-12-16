@@ -12,6 +12,7 @@ import {
   ArrowRight,
   ExternalLink,
   User,
+  Check,
 } from "lucide-react";
 import { supabase } from "@/utils/supabaseClient";
 import {
@@ -75,8 +76,14 @@ export default function PumpDumpHome() {
     seconds: 0,
   });
   const [, setYourPrediction] = useState<any>(null);
-  const { period, loading, error, currentLeader, walletPosition } =
-    usePredictionPeriod();
+  const {
+    period,
+    loading,
+    error,
+    currentLeader,
+    walletPosition,
+    tomorrowsPrediction,
+  } = usePredictionPeriod();
 
   const [submitStatus, setSubmitStatus] = useState<
     "idle" | "loading" | "success" | "error"
@@ -142,20 +149,36 @@ export default function PumpDumpHome() {
         throw new Error("Please enter both high and low predictions");
       }
 
-      // 1. Send TON transaction
-      const transaction: SendTransactionRequest = {
-        validUntil: Date.now() + 5 * 60 * 1000,
-        messages: [
-          {
-            address: "UQAS5RgeZdShqIIjhTtbFiLPask0eHUmbsltA99oybs8KDvm",
-            amount: "1000000000", // 1 TON
-          },
-        ],
-      };
+      // Check for existing valid transaction
+      const hasValidTransaction = await checkExistingTransaction(walletAddress);
 
-      await tonConnectUI.sendTransaction(transaction);
+      // If no valid transaction found, send a new one
+      if (!hasValidTransaction) {
+        const transaction: SendTransactionRequest = {
+          validUntil: Date.now() + 5 * 60 * 1000,
+          messages: [
+            {
+              address: "UQAS5RgeZdShqIIjhTtbFiLPask0eHUmbsltA99oybs8KDvm",
+              amount: "1000000000", // 1 TON
+            },
+          ],
+        };
 
-      // 2. Submit prediction to API
+        await tonConnectUI.sendTransaction(transaction);
+
+        // Wait a bit for transaction to be processed
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
+        // Verify the transaction went through
+        const transactionVerified = await checkExistingTransaction(
+          walletAddress
+        );
+        if (!transactionVerified) {
+          throw new Error("Transaction verification failed");
+        }
+      }
+
+      // Submit prediction to API
       const response = await fetch(API_URL, {
         method: "POST",
         headers: {
@@ -171,31 +194,9 @@ export default function PumpDumpHome() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Handle specific error codes from the backend
-        if (data.error) {
-          switch (data.error.code) {
-            case "DUPLICATE_TRANSACTION":
-              throw new Error(
-                "This TON transaction has already been used for another prediction"
-              );
-            case "INVALID_PREDICTION_VALUES":
-              throw new Error(
-                "Your predicted low price must be less than your predicted high price"
-              );
-            case "DUPLICATE_PREDICTION":
-              throw new Error(
-                "You've already submitted a prediction for this round. Wait for the next day!"
-              );
-            default:
-              throw new Error(
-                data.error.message || "Failed to submit prediction"
-              );
-          }
-        }
-        throw new Error("Failed to submit prediction");
+        throw new Error(data.error?.message || "Failed to submit prediction");
       }
 
-      // Success handling
       setYourPrediction({
         high: parseFloat(prediction.high),
         low: parseFloat(prediction.low),
@@ -209,6 +210,52 @@ export default function PumpDumpHome() {
       setSubmitError(
         error instanceof Error ? error.message : "An unexpected error occurred"
       );
+    }
+  };
+
+  // Add this function to check for existing valid transaction
+  const checkExistingTransaction = async (
+    walletAddress: string
+  ): Promise<boolean> => {
+    try {
+      const response = await fetch(
+        `https://toncenter.com/api/v2/getTransactions?` +
+          new URLSearchParams({
+            address: walletAddress,
+            limit: "10",
+            to_lt: "0",
+            archival: "false",
+          }),
+        {
+          headers: {
+            "X-API-Key":
+              "60ae4958bb1791c13e4bcd9052b5955ed7cd024c04560fcc8b1d4397c613cb07",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch TON transactions");
+      }
+
+      const data = await response.json();
+
+      if (!data.ok) {
+        throw new Error("Invalid response from TON Center");
+      }
+
+      // Look for a valid transaction
+      const validTransaction = data.result.find(
+        (tx: any) =>
+          tx.in_msg?.destination ===
+            "EQAS5RgeZdShqIIjhTtbFiLPask0eHUmbsltA99oybs8KGYj" &&
+          tx.in_msg?.value === "1000000000"
+      );
+
+      return !!validTransaction;
+    } catch (error) {
+      console.error("Error checking transactions:", error);
+      throw new Error("Failed to verify transaction status");
     }
   };
 
@@ -490,25 +537,66 @@ export default function PumpDumpHome() {
         <div className="grid grid-cols-1 gap-6">
           {walletAddress ? (
             <div className="rounded-xl bg-white p-0.5 shadow-lg transition-all duration-300">
-              <button
-                onClick={() => setShowPredictionModal(true)}
-                className="w-full rounded-lg bg-white"
-              >
-                <div className="flex flex-col items-center gap-4 p-6">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-semibold text-black">
-                      {t.home["Enter Tomorrow's Race"]}
-                    </span>
-                    <ArrowRight className="w-4 h-4 text-gray-600 group-hover:translate-x-0.5 transition-transform duration-300" />
-                  </div>
+              {tomorrowsPrediction ? (
+                <div className="w-full rounded-lg bg-white">
+                  <div className="flex flex-col items-center gap-4 p-6">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-semibold text-black">
+                        {t.home["Your Prediction for Tomorrow"]}
+                      </span>
+                    </div>
 
-                  <div className="flex gap-x-2 text-black font-semibold">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
-                      <div className="text-sm">💰 1 TON</div>
+                    <div className="flex gap-4 text-black">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
+                        <TrendingDown className="w-4 h-4 text-rose-500" />
+                        <div className="text-sm font-mono">
+                          $
+                          {Math.round(
+                            tomorrowsPrediction.predicted_low
+                          ).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
+                        <TrendingUp className="w-4 h-4 text-emerald-500" />
+                        <div className="text-sm font-mono">
+                          $
+                          {Math.round(
+                            tomorrowsPrediction.predicted_high
+                          ).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-sm text-gray-500">
+                      {
+                        t.home[
+                          "Come back tomorrow to submit your prediction for the following day!"
+                        ]
+                      }
                     </div>
                   </div>
                 </div>
-              </button>
+              ) : (
+                <button
+                  onClick={() => setShowPredictionModal(true)}
+                  className="w-full rounded-lg bg-white"
+                >
+                  <div className="flex flex-col items-center gap-4 p-6">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-semibold text-black">
+                        {t.home["Enter Tomorrow's Race"]}
+                      </span>
+                      <ArrowRight className="w-4 h-4 text-gray-600 group-hover:translate-x-0.5 transition-transform duration-300" />
+                    </div>
+
+                    <div className="flex gap-x-2 text-black font-semibold">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
+                        <div className="text-sm">💰 1 TON</div>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              )}
             </div>
           ) : (
             <div className="rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 p-6">

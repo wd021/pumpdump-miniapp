@@ -6,6 +6,7 @@ import { Root } from "@/components/Root.tsx";
 import { EnvUnsupported } from "@/components/EnvUnsupported.tsx";
 import { init } from "@/init.ts";
 
+import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 
 import "@telegram-apps/telegram-ui/dist/styles.css";
@@ -15,6 +16,11 @@ import "./index.css";
 import "./mockEnv.ts";
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
+
+posthog.init("phc_4LeJ7zOqnqsUhsav6dSoMQ5m1qsIKGKUx6xCPGZhY9f", {
+  api_host: "https://us.i.posthog.com",
+  person_profiles: "identified_only",
+});
 
 try {
   // Configure all application dependencies.

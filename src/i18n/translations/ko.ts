@@ -20,6 +20,9 @@ export const ko = {
     "Loading...": "로드 중...",
     "Loading price data...": "가격 데이터를 로드하는 중...",
     "Error:": "오류:",
+    "Your Prediction for Tomorrow": "내일의 예측",
+    "Come back tomorrow to submit your prediction for the following day!":
+      "다음 날의 예측을 제출하려면 내일 다시 방문하세요!",
   },
   predict: {
     "Predict Tomorrow's BTC Price": "내일 BTC 가격을 예측하세요",

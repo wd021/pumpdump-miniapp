@@ -20,6 +20,9 @@ export const ja = {
     "Loading...": "読み込み中...",
     "Loading price data...": "価格データの読み込み中...",
     "Error:": "エラー:",
+    "Your Prediction for Tomorrow": "あなたの明日の予測",
+    "Come back tomorrow to submit your prediction for the following day!":
+      "翌日の予測を送信するには、明日戻ってきてください!",
   },
   predict: {
     "Predict Tomorrow's BTC Price": "明日のBTC価格を予測する",
