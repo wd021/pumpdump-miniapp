@@ -37,7 +37,7 @@ const steps = [
   },
   {
     emoji: "💎",
-    title: "Stake 1 TON",
+    title: "Pay 1 TON",
     description: "Submit your prediction to join",
   },
   {
@@ -208,21 +208,23 @@ export default function PumpDumpHome() {
       switch (submitStatus) {
         case "loading":
           return {
-            title: "Submitting...",
-            message: "Processing your prediction...",
+            title: t.predict["Submitting..."],
+            message: t.predict["Processing your prediction..."],
             className: "text-gray-400",
           };
         case "success":
           return {
-            title: "Success!",
+            title: t.predict["Success!"],
             message:
-              "Your prediction has been submitted successfully! Good luck! 🍀",
+              t.predict[
+                "Your prediction has been submitted successfully! Good luck! 🍀"
+              ],
             className: "text-emerald-500",
           };
         case "error":
           return {
-            title: "Error",
-            message: submitError || "An unexpected error occurred",
+            title: t.predict["Error"],
+            message: submitError || t.predict["An unexpected error occurred"],
             className: "text-rose-500",
           };
         default:
@@ -253,7 +255,7 @@ export default function PumpDumpHome() {
               onClick={() => setSubmitStatus("idle")}
               className="mt-4 px-4 py-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors"
             >
-              Try Again
+              {t.predict["Try Again"]}
             </button>
           )}
         </div>
@@ -539,14 +541,14 @@ export default function PumpDumpHome() {
       <Modal
         isOpen={showPredictionModal}
         onClose={() => setShowPredictionModal(false)}
-        title="Predict Tomorrow's BTC Price"
+        title={t.predict["Predict Tomorrow's BTC Price"]}
       >
         <form onSubmit={handleSubmitPrediction} className="space-y-6">
           <div className="space-y-4">
             <div className="relative">
               <label className="flex items-center gap-2 text-gray-700 font-medium mb-2">
                 <ArrowUpRight className="w-4 h-4 text-green-500" />
-                Predict High
+                {t.predict["Predict High"]}
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
@@ -561,7 +563,7 @@ export default function PumpDumpHome() {
                   className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 
                          focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
                          transition-all duration-200"
-                  placeholder="Enter predicted high..."
+                  placeholder={t.predict["Enter predicted high..."]}
                 />
               </div>
             </div>
@@ -569,7 +571,7 @@ export default function PumpDumpHome() {
             <div className="relative">
               <label className="flex items-center gap-2 text-gray-700 font-medium mb-2">
                 <ArrowDownRight className="w-4 h-4 text-red-500" />
-                Predict Low
+                {t.predict["Predict Low"]}
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
@@ -584,7 +586,7 @@ export default function PumpDumpHome() {
                   className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 
                          focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
                          transition-all duration-200"
-                  placeholder="Enter predicted low..."
+                  placeholder={t.predict["Enter predicted low..."]}
                 />
               </div>
             </div>
@@ -593,12 +595,15 @@ export default function PumpDumpHome() {
                 <Crown className="w-5 h-5 text-yellow-500" />
                 <div className="text-sm text-gray-600">
                   <span className="font-semibold">
-                    Most accurate prediction wins!
+                    {t.predict["Most accurate prediction wins!"]}
                   </span>
                   <br />
                   <span className="text-gray-500">
-                    Get closest to tomorrow's actual high & low to win the
-                    entire prize pool
+                    {
+                      t.predict[
+                        "Get closest to tomorrow's actual high & low to win the entire prize pool"
+                      ]
+                    }
                   </span>
                 </div>
               </div>
@@ -611,7 +616,7 @@ export default function PumpDumpHome() {
                      text-white py-3 px-6 rounded-lg font-semibold transition-all duration-200
                      flex items-center justify-center gap-2 group"
             >
-              <span>Submit Prediction</span>
+              <span>{t.predict["Submit Prediction"]}</span>
             </button>
           </div>
         </form>
@@ -621,9 +626,10 @@ export default function PumpDumpHome() {
       <Modal
         isOpen={showHistoryModal}
         onClose={() => setShowHistoryModal(false)}
-        title="Past Predictions"
+        title={t.history["Past Predictions"]}
       >
         <HistoryContent
+          t={t}
           historyLoading={historyLoading}
           predictionHistory={predictionHistory as unknown as PredictionEntry[]}
         />
@@ -633,7 +639,7 @@ export default function PumpDumpHome() {
       <Modal
         isOpen={showAboutModal}
         onClose={() => setShowAboutModal(false)}
-        title="How It Works"
+        title={t.about["How It Works"]}
       >
         <div className="space-y-6">
           {steps.map((step, index) => (
@@ -645,15 +651,19 @@ export default function PumpDumpHome() {
                 <span className="text-xl">{step.emoji}</span>
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">{step.title}</h3>
-                <p className="text-gray-600 text-sm mt-1">{step.description}</p>
+                <h3 className="font-medium text-gray-900">
+                  {t.about[step.title]}
+                </h3>
+                <p className="text-gray-600 text-sm mt-1">
+                  {t.about[step.description]}
+                </p>
               </div>
             </div>
           ))}
 
           <div className="bg-blue-50 p-4 rounded-xl">
             <p className="text-blue-600 text-sm text-center font-medium">
-              Ready to make your prediction? 🚀
+              {t.about["Ready to make your prediction?"]} 🚀
             </p>
           </div>
         </div>

@@ -5,9 +5,11 @@ import { supabase } from "@/utils/supabaseClient";
 import { PredictionEntry } from "@/types/prediction";
 
 const HistoryContent = ({
+  t,
   historyLoading,
   predictionHistory,
 }: {
+  t: any;
   historyLoading: boolean;
   predictionHistory: PredictionEntry[];
 }) => {
@@ -37,14 +39,16 @@ const HistoryContent = ({
 
   if (historyLoading) {
     return (
-      <div className="text-gray-500 text-center py-8">Loading history...</div>
+      <div className="text-gray-500 text-center py-8">
+        {t.history["Loading history..."]}
+      </div>
     );
   }
 
   if (predictionHistory.length === 0) {
     return (
       <div className="text-gray-500 text-center py-8">
-        No prediction history found
+        {t.history["No prediction history found"]}
       </div>
     );
   }
@@ -76,11 +80,11 @@ const HistoryContent = ({
                 </div>
                 {entry.winner_wallet_address ? (
                   <span className="text-green-500 text-sm bg-green-50 px-2 py-0.5 rounded-full">
-                    Settled
+                    {t.history["Settled"]}
                   </span>
                 ) : (
                   <span className="text-orange-500 text-sm bg-orange-50 px-2 py-0.5 rounded-full">
-                    Pending
+                    {t.history["Pending"]}
                   </span>
                 )}
               </div>
@@ -95,7 +99,7 @@ const HistoryContent = ({
               {/* Final Results */}
               <div className="p-3 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100">
                 <div className="text-xs font-medium text-gray-700 mb-2">
-                  Final Price
+                  {t.history["Final Price"]}
                 </div>
                 {entry.final_high ? (
                   <div className="space-y-2">
@@ -113,14 +117,16 @@ const HistoryContent = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="text-gray-500 text-sm">Pending</div>
+                  <div className="text-gray-500 text-sm">
+                    {t.history["Pending"]}
+                  </div>
                 )}
               </div>
 
               {/* Your Prediction */}
               <div className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50">
                 <div className="text-xs font-medium text-gray-700 mb-2">
-                  Your Prediction
+                  {t.history["Your Prediction"]}
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
@@ -141,7 +147,7 @@ const HistoryContent = ({
               {/* Winner Card */}
               <div className="p-3 rounded-lg bg-gradient-to-br from-green-50 to-green-100/50">
                 <div className="text-xs font-medium text-gray-700 mb-2">
-                  Winner
+                  {t.history["Winner"]}
                 </div>
                 {entry.winner_wallet_address ? (
                   <div className="space-y-2">
@@ -186,7 +192,9 @@ const HistoryContent = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="text-gray-500 text-sm">To be settled</div>
+                  <div className="text-gray-500 text-sm">
+                    {t.history["To be settled"]}
+                  </div>
                 )}
               </div>
             </div>
@@ -198,10 +206,12 @@ const HistoryContent = ({
       <Modal
         isOpen={!!selectedPeriod}
         onClose={() => setSelectedPeriod(null)}
-        title="All Predictions"
+        title={t.history["All Predictions"]}
       >
         {detailsLoading ? (
-          <div className="text-center py-8">Loading predictions...</div>
+          <div className="text-center py-8">
+            {t.history["Loading predictions..."]}
+          </div>
         ) : (
           <div className="space-y-6">
             {/* List of Predictions */}
@@ -275,7 +285,7 @@ const HistoryContent = ({
                       <div className="flex items-center gap-2">
                         <Trophy className="w-5 h-5 text-yellow-500" />
                         <span className="font-medium text-gray-900">
-                          Winner:{" "}
+                          {t.history["Winner"]}:{" "}
                           {formatWalletAddress(
                             detailedPredictions[0].winner_wallet_address
                           )}
@@ -287,7 +297,6 @@ const HistoryContent = ({
                         rel="noopener noreferrer"
                         className="text-blue-500 hover:text-blue-600 inline-flex items-center gap-1 text-sm"
                       >
-                        View on TONScan
                         <ExternalLink className="w-4 h-4" />
                       </a>
                     </div>
