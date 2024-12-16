@@ -32,3 +32,34 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+.privacy-policy {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.privacy-policy h1 {
+  color: white;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.privacy-policy h2 {
+  color: white;
+  margin-top: 25px;
+}
+
+.privacy-policy section {
+  margin-bottom: 30px;
+}
+
+.privacy-policy ul {
+  margin-left: 20px;
+  margin-top: 10px;
+}
+
+.privacy-policy li {
+  margin-bottom: 5px;
+}

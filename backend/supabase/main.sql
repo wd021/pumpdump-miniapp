@@ -404,6 +404,7 @@ returns table (
     left join period_winners pw on pp.id = pw.period_id
     left join t_prize_distributions pd on pp.id = pd.period_id and pd.user_prediction_id = pw.prediction_id
     left join t_user_predictions up on pp.id = up.period_id and up.wallet_address = p_wallet_address
+    where pp.starts_at <= (current_date - 1)
     order by pp.id desc
     limit p_page_size
     offset (p_page_number - 1) * p_page_size;
