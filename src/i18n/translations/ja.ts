@@ -15,6 +15,8 @@ export const ja = {
       "ウォレットを接続して予測ゲームに参加する",
     History: "歴史",
     About: "について",
+    "You haven't made a prediction for this round":
+      "このラウンドの予測はまだ行っていません",
     "Loading...": "読み込み中...",
     "Loading price data...": "価格データの読み込み中...",
     "Error:": "エラー:",

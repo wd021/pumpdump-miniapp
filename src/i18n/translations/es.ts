@@ -15,6 +15,8 @@ export const es = {
       "Únete al juego de predicciones conectando tu monedero",
     History: "Historia",
     About: "Acerca de",
+    "You haven't made a prediction for this round":
+      "No has hecho una predicción para esta ronda",
     "Loading...": "Cargando...",
     "Loading price data...": "Cargando datos de precios...",
     "Error:": "Error:",

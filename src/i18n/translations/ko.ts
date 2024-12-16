@@ -15,6 +15,8 @@ export const ko = {
       "지갑을 연결하여 예측 게임에 참여하세요",
     History: "역사",
     About: "에 대해",
+    "You haven't made a prediction for this round":
+      "이 라운드에 대한 예측을 하지 않았습니다",
     "Loading...": "로드 중...",
     "Loading price data...": "가격 데이터를 로드하는 중...",
     "Error:": "오류:",

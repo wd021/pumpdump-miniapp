@@ -15,6 +15,7 @@ export const zh = {
       "通过连接钱包加入预测游戏",
     History: "历史",
     About: "关于",
+    "You haven't made a prediction for this round": "您还没有为这一轮做出预测",
     "Loading...": "正在加载...",
     "Loading price data...": "正在加载价格数据...",
     "Error:": "错误:",

@@ -56,6 +56,7 @@ export interface PredictionHistory {
 }
 
 export interface PredictionEntry {
+  winner_transaction_hash: any;
   user_predicted_low: number;
   user_predicted_high: number;
   winner_predicted_low: number;

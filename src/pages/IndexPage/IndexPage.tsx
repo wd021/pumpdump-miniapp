@@ -29,7 +29,17 @@ import HistoryContent from "./historyContent";
 import { getTranslations } from "@/i18n/utils/getTranslation";
 import { publicUrl } from "@/helpers/publicUrl";
 
-const steps = [
+type StepTitle = "Predict BTC Prices" | "Pay 1 TON" | "Win Prize Pool";
+type StepDescription =
+  | "Set tomorrow's BTC high & low prices"
+  | "Submit your prediction to join"
+  | "Most accurate prediction wins the entire prize pool. Pump Dump takes a 5% fee.";
+
+const steps: Array<{
+  emoji: string;
+  title: StepTitle;
+  description: StepDescription;
+}> = [
   {
     emoji: "🎯",
     title: "Predict BTC Prices",
@@ -653,10 +663,10 @@ export default function PumpDumpHome() {
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">
-                  {t.about[step.title]}
+                  {t.about[step.title as keyof typeof t.about]}
                 </h3>
                 <p className="text-gray-600 text-sm mt-1">
-                  {t.about[step.description]}
+                  {t.about[step.description as keyof typeof t.about]}
                 </p>
               </div>
             </div>

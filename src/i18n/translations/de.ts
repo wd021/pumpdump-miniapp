@@ -15,6 +15,8 @@ export const de = {
       "Tritt dem Vorherspiel bei, indem du deine Wallet verbindest",
     History: "Geschichte",
     About: "Über",
+    "You haven't made a prediction for this round":
+      "Sie haben keine Vorhersage für diese Runde gemacht",
     "Loading...": "Laden...",
     "Loading price data...": "Preisdaten werden geladen...",
     "Error:": "Fehler:",

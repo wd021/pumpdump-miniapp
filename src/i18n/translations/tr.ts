@@ -15,6 +15,8 @@ export const tr = {
       "Cüzdanınızı bağlayarak tahmin oyununa katılın",
     History: "Tarih",
     About: "Hakkında",
+    "You haven't made a prediction for this round":
+      "Bu tur için bir tahmin yapmadınız",
     "Loading...": "Yükleniyor...",
     "Loading price data...": "Fiyat verileri yükleniyor...",
     "Error:": "Hata:",

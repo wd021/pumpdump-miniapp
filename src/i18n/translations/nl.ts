@@ -15,6 +15,8 @@ export const nl = {
       "Doe mee aan het voorspellingsspel door je portemonnee te verbinden",
     History: "Geschiedenis",
     About: "Over",
+    "You haven't made a prediction for this round":
+      "U heeft geen voorspelling gedaan voor deze ronde",
     "Loading...": "Laden...",
     "Loading price data...": "Prijsgegevens worden geladen...",
     "Error:": "Fout:",

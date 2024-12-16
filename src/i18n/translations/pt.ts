@@ -15,6 +15,8 @@ export const pt = {
       "Junte-se ao jogo de previsão conectando sua carteira",
     History: "História",
     About: "Sobre",
+    "You haven't made a prediction for this round":
+      "Você não fez uma previsão para esta rodada",
     "Loading...": "Carregando...",
     "Loading price data...": "Carregando dados de preço...",
     "Error:": "Erro:",
