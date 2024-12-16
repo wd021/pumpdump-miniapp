@@ -359,18 +359,6 @@ export default function PumpDumpHome() {
                 {/* Today's Range */}
                 <div className="grid grid-cols-2 gap-8 mt-4 md:mt-8">
                   <div>
-                    <div className="flex items-center justify-center gap-2 text-emerald-500 mb-3">
-                      <TrendingUp className="w-6 h-6" />
-                      <div className="text-sm md:text-base font-medium">
-                        {t.home["Today's High"]}
-                      </div>
-                    </div>
-                    <div className="text-lg md:text-4xl font-bold text-white font-mono">
-                      ${Math.round(stats.todayRange.high).toLocaleString()}
-                    </div>
-                  </div>
-
-                  <div>
                     <div className="flex items-center justify-center gap-2 text-rose-500 mb-3">
                       <TrendingDown className="w-6 h-6" />
                       <div className="text-sm md:text-base font-medium">
@@ -379,6 +367,17 @@ export default function PumpDumpHome() {
                     </div>
                     <div className="text-lg md:text-4xl font-bold text-white font-mono">
                       ${Math.round(stats.todayRange.low).toLocaleString()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-center gap-2 text-emerald-500 mb-3">
+                      <TrendingUp className="w-6 h-6" />
+                      <div className="text-sm md:text-base font-medium">
+                        {t.home["Today's High"]}
+                      </div>
+                    </div>
+                    <div className="text-lg md:text-4xl font-bold text-white font-mono">
+                      ${Math.round(stats.todayRange.high).toLocaleString()}
                     </div>
                   </div>
                 </div>

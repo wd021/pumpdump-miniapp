@@ -6,6 +6,8 @@ import { Root } from "@/components/Root.tsx";
 import { EnvUnsupported } from "@/components/EnvUnsupported.tsx";
 import { init } from "@/init.ts";
 
+import { PostHogProvider } from "posthog-js/react";
+
 import "@telegram-apps/telegram-ui/dist/styles.css";
 import "./index.css";
 
@@ -20,7 +22,12 @@ try {
 
   root.render(
     <StrictMode>
-      <Root />
+      <PostHogProvider
+        apiKey="phc_4LeJ7zOqnqsUhsav6dSoMQ5m1qsIKGKUx6xCPGZhY9f"
+        options={{ api_host: "https://us.i.posthog.com" }}
+      >
+        <Root />
+      </PostHogProvider>
     </StrictMode>
   );
 } catch (e) {
