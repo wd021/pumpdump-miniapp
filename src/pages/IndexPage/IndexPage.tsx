@@ -352,20 +352,20 @@ export default function PumpDumpHome() {
                 <div className="text-gray-400 text-sm">
                   {t.home["Current BTC price"]}
                 </div>
-                <div className="text-5xl font-bold text-white mb-4 mt-2 font-mono">
+                <div className="text-lg md:text-4xl font-bold text-white mb-4 mt-2 font-mono">
                   ${Math.round(stats.currentPrice).toLocaleString()}
                 </div>
 
                 {/* Today's Range */}
-                <div className="grid grid-cols-2 gap-8 mt-8">
+                <div className="grid grid-cols-2 gap-8 mt-4 md:mt-8">
                   <div>
                     <div className="flex items-center justify-center gap-2 text-emerald-500 mb-3">
                       <TrendingUp className="w-6 h-6" />
-                      <div className="text-base font-medium">
+                      <div className="text-sm md:text-base font-medium">
                         {t.home["Today's High"]}
                       </div>
                     </div>
-                    <div className="text-4xl font-bold text-white font-mono">
+                    <div className="text-lg md:text-4xl font-bold text-white font-mono">
                       ${Math.round(stats.todayRange.high).toLocaleString()}
                     </div>
                   </div>
@@ -373,11 +373,11 @@ export default function PumpDumpHome() {
                   <div>
                     <div className="flex items-center justify-center gap-2 text-rose-500 mb-3">
                       <TrendingDown className="w-6 h-6" />
-                      <div className="text-base font-medium">
+                      <div className="text-sm md:text-base font-medium">
                         {t.home["Today's Low"]}
                       </div>
                     </div>
-                    <div className="text-4xl font-bold text-white font-mono">
+                    <div className="text-lg md:text-4xl font-bold text-white font-mono">
                       ${Math.round(stats.todayRange.low).toLocaleString()}
                     </div>
                   </div>
