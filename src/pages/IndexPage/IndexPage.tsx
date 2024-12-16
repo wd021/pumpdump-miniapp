@@ -566,7 +566,7 @@ export default function PumpDumpHome() {
                       </div>
                     </div>
 
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 text-center">
                       {
                         t.home[
                           "Come back tomorrow to submit your prediction for the following day!"
