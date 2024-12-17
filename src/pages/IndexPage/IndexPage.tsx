@@ -437,7 +437,7 @@ export default function PumpDumpHome() {
                 {t.home["Leading Prediction"]}
               </div>
               {currentLeader ? (
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-y-2">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       <div className="bg-yellow-500/10 p-1.5 rounded-lg">
@@ -450,7 +450,7 @@ export default function PumpDumpHome() {
                     </div>
 
                     <div className="flex items-center gap-1 text-gray-400">
-                      <div className="font-mono text-sm">
+                      <div className="font-mono text-sm truncate max-w-[100px]">
                         {currentLeader?.wallet_address.slice(0, 4)}...
                         {currentLeader?.wallet_address.slice(-4)}
                       </div>
@@ -486,7 +486,7 @@ export default function PumpDumpHome() {
                 {t.home["Your Prediction"]}
               </div>
               {walletPosition ? (
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-y-2">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       <div className="bg-blue-500/10 p-1.5 rounded-lg">
@@ -501,7 +501,7 @@ export default function PumpDumpHome() {
                     </div>
 
                     <div className="flex items-center gap-1 text-gray-400">
-                      <div className="font-mono text-sm">
+                      <div className="font-mono text-sm truncate max-w-[100px]">
                         {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
                       </div>
                       <ExternalLink className="w-3 h-3" />
