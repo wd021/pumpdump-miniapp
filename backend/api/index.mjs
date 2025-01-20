@@ -112,7 +112,7 @@ const checkTransaction = async (
         address: walletAddress,
         limit: 10,
         to_lt: 0,
-        archival: false,
+        archival: true,
       },
       headers: {
         "X-API-Key": apiKey,
