@@ -82,6 +82,7 @@ export default function PumpDumpHome() {
     currentLeader,
     walletPosition,
     tomorrowsPrediction,
+    setTomorrowsPrediction,
   } = usePredictionPeriod();
 
   const [submitStatus, setSubmitStatus] = useState<
@@ -148,33 +149,25 @@ export default function PumpDumpHome() {
         throw new Error("Please enter both high and low predictions");
       }
 
-      // Check for existing valid transaction
-      const hasValidTransaction = await checkExistingTransaction(walletAddress);
+      const transaction: SendTransactionRequest = {
+        validUntil: Date.now() + 5 * 60 * 1000,
+        messages: [
+          {
+            address: "UQAS5RgeZdShqIIjhTtbFiLPask0eHUmbsltA99oybs8KDvm",
+            amount: "1000000000", // 1 TON
+          },
+        ],
+      };
 
-      // If no valid transaction found, send a new one
-      if (!hasValidTransaction) {
-        const transaction: SendTransactionRequest = {
-          validUntil: Date.now() + 5 * 60 * 1000,
-          messages: [
-            {
-              address: "UQAS5RgeZdShqIIjhTtbFiLPask0eHUmbsltA99oybs8KDvm",
-              amount: "1000000000", // 1 TON
-            },
-          ],
-        };
+      await tonConnectUI.sendTransaction(transaction);
 
-        await tonConnectUI.sendTransaction(transaction);
+      // Wait a bit for transaction to be processed
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
-        // Wait a bit for transaction to be processed
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-
-        // Verify the transaction went through
-        const transactionVerified = await checkExistingTransaction(
-          walletAddress
-        );
-        if (!transactionVerified) {
-          throw new Error("Transaction verification failed");
-        }
+      // Verify the transaction went through
+      const transactionVerified = await checkExistingTransaction(walletAddress);
+      if (!transactionVerified) {
+        throw new Error("Transaction verification failed");
       }
 
       // Submit prediction to API
@@ -200,6 +193,15 @@ export default function PumpDumpHome() {
         high: parseFloat(prediction.high),
         low: parseFloat(prediction.low),
       });
+
+      // Optimistically update tomorrow's prediction
+      setTomorrowsPrediction({
+        wallet_address: walletAddress,
+        period_id: 1,
+        predicted_high: parseFloat(prediction.high),
+        predicted_low: parseFloat(prediction.low),
+      });
+
       setShowPredictionModal(false);
       setPrediction({ high: "", low: "" });
       setSubmitStatus("success");
@@ -223,7 +225,7 @@ export default function PumpDumpHome() {
             address: walletAddress,
             limit: "10",
             to_lt: "0",
-            archival: "false",
+            archival: "true",
           }),
         {
           headers: {
@@ -253,8 +255,12 @@ export default function PumpDumpHome() {
 
       return !!validTransaction;
     } catch (error) {
-      console.error("Error checking transactions:", error);
-      throw new Error("Failed to verify transaction status");
+      // Instead of just logging to console, throw the error to be handled by the caller
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to verify transaction status";
+      throw new Error(`Transaction verification failed: ${errorMessage}`);
     }
   };
 

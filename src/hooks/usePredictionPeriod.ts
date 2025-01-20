@@ -73,7 +73,7 @@ export const usePredictionPeriod = () => {
   // Original period polling effect
   useEffect(() => {
     fetchCurrentPeriod();
-    const intervalId = setInterval(fetchCurrentPeriod, 15000);
+    const intervalId = setInterval(fetchCurrentPeriod, 30000);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -173,5 +173,6 @@ export const usePredictionPeriod = () => {
     currentLeader,
     walletPosition,
     tomorrowsPrediction,
+    setTomorrowsPrediction,
   };
 };
